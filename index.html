@@ -811,40 +811,87 @@
      ***********************/
 
     const BOOK_NAME_CN = {
-gen:'创世记', exo:'出埃及记', lev:'利未记', num:'民数记', deu:'申命记',
-  jos:'约书亚记', judg:'士师记', rut:'路得记',
-  '1sa':'撒母耳记上', '2sa':'撒母耳记下',
-  '1kg':'列王纪上', '2kg':'列王纪下',
-  '1kgs':'列王纪上', '2kgs':'列王纪下',
-  '1chr':'历代志上', '2chr':'历代志下',
-  est:'以斯帖记',
-  job:'约伯记',
-  psa:'诗篇', 
-  pro:'箴言', 
-  ecc:'传道书', 
-  sng:'雅歌',
-  isa:'以赛亚书', jer:'耶利米书', lam:'耶利米哀歌', eze:'以西结书', dan:'但以理书',
-  hos:'何西阿书', joe:'约珥书', amo:'阿摩司书', oba:'俄巴底亚书', jon:'约拿书',
-  mic:'弥迦书', nah:'那鸿书', hab:'哈巴谷书', zep:'西番雅书', hag:'哈该书',
-  zec:'撒迦利亚书', mal:'玛拉基书',
+const BOOK_NAME_CN = {
+  // 旧约 (Old Testament)
+  gen: '创世记', genesis: '创世记',
+  exo: '出埃及记', exodus: '出埃及记',
+  lev: '利未记', leviticus: '利未记',
+  num: '民数记', numbers: '民数记',
+  deu: '申命记', deuteronomy: '申命记',
+  jos: '约书亚记', joshua: '约书亚记',
+  judg: '士师记', judges: '士师记', jdg: '士师记',
+  rut: '路得记', ruth: '路得记',
+  '1sa': '撒母耳记上', '1samuel': '撒母耳记上', '1 samuel': '撒母耳记上',
+  '2sa': '撒母耳记下', '2samuel': '撒母耳记下', '2 samuel': '撒母耳记下',
+  '1kg': '列王纪上', '1kgs': '列王纪上', '1kings': '列王纪上', '1 kings': '列王纪上',
+  '2kg': '列王纪下', '2kgs': '列王纪下', '2kings': '列王纪下', '2 kings': '列王纪下',
+  '1chr': '历代志上', '1chronicles': '历代志上', '1 chronicles': '历代志上',
+  '2chr': '历代志下', '2chronicles': '历代志下', '2 chronicles': '历代志下',
+  ezr: '以斯拉记', ezra: '以斯拉记',
+  neh: '尼希米记', nehemiah: '尼希米记',
+  est: '以斯帖记', esther: '以斯帖记',
+  job: '约伯记',
+  psa: '诗篇', psalms: '诗篇',
+  pro: '箴言', proverbs: '箴言',
+  ecc: '传道书', ecclesiastes: '传道书',
+  sng: '雅歌', songofsolomon: '雅歌', 'song of songs': '雅歌',
+  isa: '以赛亚书', isaiah: '以赛亚书',
+  jer: '耶利米书', jeremiah: '耶利米书',
+  lam: '耶利米哀歌', lamentations: '耶利米哀歌',
+  eze: '以西结书', ezekiel: '以西结书',
+  dan: '但以理书', daniel: '但以理书',
+  hos: '何西阿书', hosea: '何西阿书',
+  joe: '约珥书', joel: '约珥书',
+  amo: '阿摩司书', amos: '阿摩司书',
+  oba: '俄巴底亚书', obadiah: '俄巴底亚书',
+  jon: '约拿书', jonah: '约拿书',
+  mic: '弥迦书', micah: '弥迦书',
+  nah: '那鸿书', nahum: '那鸿书',
+  hab: '哈巴谷书', habakkuk: '哈巴谷书',
+  zep: '西番雅书', zephaniah: '西番雅书',
+  hag: '哈该书', haggai: '哈该书',
+  zec: '撒迦利亚书', zechariah: '撒迦利亚书',
+  mal: '玛拉基书', malachi: '玛拉基书',
 
-  mat:'马太福音', mar:'马可福音', luk:'路加福音', jhn:'约翰福音', john:'约翰福音',
-  act:'使徒行传', rom:'罗马书',
-  '1cor':'哥林多前书', '2cor':'哥林多后书',
-  gal:'加拉太书', eph:'以弗所书', php:'腓立比书', phil:'腓立比书', col:'歌罗西书',
-  '1ths':'帖撒罗尼迦前书', '2ths':'帖撒罗尼迦后书',
-  '1tim':'提摩太前书', '2tim':'提摩太后书',
-  tit:'提多书', phm:'腓利门书', heb:'希伯来书', jas:'雅各书',
-  '1pet':'彼得前书', '2pet':'彼得后书',
-  '1jn':'约翰一书', '2jn':'约翰二书', '3jn':'约翰三书',
-  jude:'犹大书', rev:'启示录'
-    };
+  // 新约 (New Testament)
+  mat: '马太福音', matthew: '马太福音',
+  mar: '马可福音', mark: '马可福音',
+  luk: '路加福音', luke: '路加福音',
+  jhn: '约翰福音', john: '约翰福音',
+  act: '使徒行行传', acts: '使徒行传',
+  rom: '罗马书', romans: '罗马书',
+  '1cor': '哥林多前书', '1corinthians': '哥林多前书', '1 corinthians': '哥林多前书',
+  '2cor': '哥林多后书', '2corinthians': '哥林多后书', '2 corinthians': '哥林多后书',
+  gal: '加拉太书', galatians: '加拉太书',
+  eph: '以弗所书', ephesians: '以弗所书',
+  php: '腓立比书', philippians: '腓立比书', phil: '腓立比书',
+  col: '歌罗西书', colossians: '歌罗西书',
+  '1ths': '帖撒罗尼迦前书', '1thessalonians': '帖撒罗尼迦前书', '1 th': '帖撒罗尼迦前书',
+  '2ths': '帖撒罗尼迦后书', '2thessalonians': '帖撒罗尼迦后书', '2 th': '帖撒罗尼迦后书',
+  '1tim': '提摩太前书', '1timothy': '提摩太前书', '1 timothy': '提摩太前书',
+  '2tim': '提摩太后书', '2timothy': '提摩太后书', '2 timothy': '提摩太后书',
+  tit: '提多书', titus: '提多书',
+  phm: '腓利门书', philemon: '腓利门书',
+  heb: '希伯来书', hebrews: '希伯来书',
+  jas: '雅各书', james: '雅各书',
+  '1pet': '彼得前书', '1peter': '彼得前书', '1 peter': '彼得前书',
+  '2pet': '彼得后书', '2peter': '彼得后书', '2 peter': '彼得后书',
+  '1jn': '约翰一书', '1john': '约翰一书', '1 john': '约翰一书',
+  '2jn': '约翰二书', '2john': '约翰二书', '2 john': '约翰二书',
+  '3jn': '约翰三书', '3john': '约翰三书', '3 john': '约翰三书',
+  jude: '犹大书',
+  rev: '启示录', revelation: '启示录'
+};
 
 
 
 function getBookDisplayName(book) {
-  const key = String(book.abbrev || '').trim().toLowerCase();
-  return BOOK_NAME_CN[key] || book.name || book.abbrev;
+  // 提取缩写和全名，全部转为小写并去空格
+  const abbrevKey = String(book.abbrev || '').trim().toLowerCase();
+  const nameKey = String(book.name || '').trim().toLowerCase();
+
+  // 匹配优先级：缩写映射 > 全名映射 > 原始名称
+  return BOOK_NAME_CN[abbrevKey] || BOOK_NAME_CN[nameKey] || book.name || book.abbrev;
 }
 
 
@@ -2024,6 +2071,7 @@ function getBookDisplayName(book) {
 </body>
 
 </html>
+
 
 
 
