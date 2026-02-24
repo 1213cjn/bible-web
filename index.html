@@ -2,885 +2,665 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#f7f7f7" id="themeColorMeta" />
   <title>微读圣经Lite Web</title>
   <style>
-  :root {
-    --bg: #f7f7f7; --card: #fff; --text: #222; --sub: #666; --line: #ececec;
-    --primary: #2b6cb0; --primary-soft: #e8f1ff; --danger: #e53e3e;
-    --shadow: 0 6px 18px rgba(0,0,0,.06); --radius: 14px;
-    --font-size: 22px; --header-h: 56px; --toolbar-h: 64px;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
-    height:100%;overflow:hidden}
-  #app{height:100vh;height:100dvh;display:flex;flex-direction:column}
-  .topbar{position:sticky;top:0;z-index:20;background:rgba(247,247,247,.92);backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--line);padding-top:var(--safe-top)}
-  .topbar-inner{height:var(--header-h);display:grid;grid-template-columns:56px 1fr 56px;align-items:center;gap:4px;padding:0 6px}
-  .icon-btn{height:40px;width:40px;border:none;border-radius:10px;background:transparent;font-size:20px;cursor:pointer;color:var(--text);justify-self:center}
-  .icon-btn:active{background:#eee}
-  .title{text-align:center;font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .main{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 12px calc(var(--toolbar-h)+var(--safe-bottom)+12px)}
-  .hidden{display:none!important}
-  .panel-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;border:1px solid #f2f2f2}
-  .section-title{margin:8px 0 12px;font-size:16px;color:var(--sub);text-align:center}
-  .book-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  .book-item{border:1px solid var(--line);background:#fff;border-radius:12px;padding:14px 8px;text-align:center;cursor:pointer;font-size:15px;line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,.03);user-select:none}
-  .book-item:active{transform:scale(.98);background:#fafafa}
-  .book-item small{display:block;color:var(--sub);margin-top:4px;font-size:12px}
-  .chapter-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-  .chapter-item{height:46px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--primary-soft);border:1px solid #dbeafe;font-weight:700;cursor:pointer;user-select:none}
-  .chapter-item:active{transform:scale(.97)}
-  .reader-wrap{display:flex;flex-direction:column;gap:10px}
-  .reader-head{background:#fff;border-radius:14px;padding:10px 12px;border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.03);text-align:center;font-weight:700;font-size:20px;line-height:1.4}
-  .reader-sub{margin-top:4px;font-weight:500;font-size:12px;color:var(--sub)}
-  .verses{background:#fff;border-radius:14px;border:1px solid var(--line);overflow:hidden}
-  .verse-row{display:grid;grid-template-columns:1fr 42px;gap:8px;align-items:start;padding:14px 10px 14px 12px;border-bottom:1px solid #f1f1f1;cursor:pointer;user-select:none}
-  .verse-row:last-child{border-bottom:none}
-  .verse-row:active{background:#fafafa}
-  .verse-row.speaking{background:#f8fbff;box-shadow:inset 3px 0 0 var(--primary)}
-  .verse-text{font-size:var(--font-size);line-height:1.8;word-break:break-word;color:#2d2d2d}
-  .verse-no{font-weight:700;color:#111;margin-right:6px}
-  .star-btn{height:32px;width:32px;border:none;background:transparent;border-radius:8px;font-size:22px;line-height:1;cursor:pointer;color:#aaa;padding:0;margin-top:2px;justify-self:center}
-  .star-btn.active{color:#f5a623}
-  .star-btn:active{background:#f3f3f3;transform:scale(.95)}
-  .toolbar{position:sticky;bottom:0;z-index:15;margin-top:-4px;padding:8px 12px calc(8px + var(--safe-bottom));
-    background:linear-gradient(to top, rgba(247,247,247,.98), rgba(247,247,247,.88));
-    backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between}
-  .toolbar .btn{flex:1;min-height:42px;border:1px solid var(--line);background:#fff;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;color:#222}
-  .toolbar .btn:active{transform:scale(.98);background:#fafafa}
-  .toolbar .btn.primary{background:var(--primary-soft);border-color:#dbeafe;color:var(--primary)}
-  .toolbar .btn.warn{color:var(--danger)}
-  .toolbar .font-indicator{min-width:72px;text-align:center;color:var(--sub);font-size:12px;line-height:1.2}
-  .empty{text-align:center;color:var(--sub);padding:28px 12px;background:#fff;border-radius:14px;border:1px solid var(--line)}
-  .tips{font-size:12px;color:var(--sub);margin:8px 4px 0;text-align:center;line-height:1.5}
-  .toast{position:fixed;left:50%;bottom:calc(80px + var(--safe-bottom));transform:translateX(-50%);
-    background:rgba(0,0,0,.82);color:#fff;border-radius:999px;padding:8px 14px;font-size:13px;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;
-    max-width:calc(100vw - 24px);text-align:center;line-height:1.4}
-  .toast.show{opacity:1}
-  .loading{padding:24px;text-align:center;color:var(--sub)}
-  .badge{display:inline-block;font-size:11px;color:var(--sub);background:#f3f4f6;border-radius:999px;padding:3px 8px;margin-left:6px;vertical-align:middle}
-  @media (min-width:768px){
-    body{background:#eceff3}
-    #app{max-width:560px;margin:0 auto;box-shadow:0 10px 30px rgba(0,0,0,.08);background:var(--bg)}
-  }
+    /* 默认/白天主题变量 */
+    :root, body.theme-light {
+      --bg: #f7f7f7;
+      --card: #ffffff;
+      --text: #222222;
+      --sub: #666666;
+      --line: #ececec;
+      --primary: #2b6cb0;
+      --primary-soft: #e8f1ff;
+      --danger: #e53e3e;
+      --shadow: 0 6px 18px rgba(0,0,0,0.06);
+      
+      --radius: 14px;
+      --header-h: 56px;
+      --toolbar-h: 64px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+      /* 排版变量，由 JS 动态覆盖 */
+      --font-size: 22px;
+      --line-height: 1.8;
+      --para-spacing: 14px;
+    }
+
+    /* 夜间主题 */
+    body.theme-dark {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #e0e0e0;
+      --sub: #999999;
+      --line: #333333;
+      --primary: #63b3ed;
+      --primary-soft: #2a4365;
+      --danger: #fc8181;
+      --shadow: 0 6px 18px rgba(0,0,0,0.3);
+    }
+
+    /* 羊皮纸主题 */
+    body.theme-parchment {
+      --bg: #f4ebd8;
+      --card: #fdf6e3;
+      --text: #4a3c31;
+      --sub: #8a7b6c;
+      --line: #e2d5c3;
+      --primary: #8c6b4a;
+      --primary-soft: #e8dccb;
+      --danger: #c53030;
+      --shadow: 0 6px 18px rgba(140, 107, 74, 0.08);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      height: 100%; overflow: hidden;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    #app {
+      height: 100vh; height: 100dvh;
+      display: flex; flex-direction: column;
+    }
+    
+    /* 顶部栏 */
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--bg); opacity: 0.96;
+      border-bottom: 1px solid var(--line);
+      padding-top: var(--safe-top);
+      transition: background-color 0.3s;
+    }
+    .topbar-inner {
+      height: var(--header-h); display: grid;
+      grid-template-columns: 56px 1fr 56px;
+      align-items: center; gap: 4px; padding: 0 6px;
+    }
+    .icon-btn {
+      height: 40px; width: 40px; border: none; border-radius: 10px;
+      background: transparent; font-size: 20px; cursor: pointer;
+      color: var(--text); justify-self: center; transition: 0.2s;
+    }
+    .icon-btn:active { background: var(--line); }
+    .title { text-align: center; font-weight: 700; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* 主内容区 */
+    .main {
+      flex: 1; overflow: auto; -webkit-overflow-scrolling: touch;
+      padding: 12px 12px calc(var(--toolbar-h) + var(--safe-bottom) + 12px);
+    }
+    .hidden { display: none !important; }
+    .panel-card {
+      background: var(--card); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 12px; border: 1px solid var(--line);
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .section-title { margin: 8px 0 12px; font-size: 16px; color: var(--sub); text-align: center; }
+
+    /* 网格布局 */
+    .book-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .book-item {
+      border: 1px solid var(--line); background: var(--card); border-radius: 12px;
+      padding: 14px 8px; text-align: center; cursor: pointer; font-size: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02); user-select: none; transition: 0.2s;
+    }
+    .book-item:active { transform: scale(0.98); background: var(--line); }
+    .book-item small { display: block; color: var(--sub); margin-top: 4px; font-size: 12px; }
+
+    .chapter-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+    .chapter-item {
+      height: 46px; display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; background: var(--primary-soft); border: 1px solid var(--line);
+      color: var(--primary); font-weight: 700; cursor: pointer; user-select: none;
+    }
+    .chapter-item:active { transform: scale(0.97); }
+
+    /* 阅读页 */
+    .reader-wrap { display: flex; flex-direction: column; gap: 10px; }
+    .reader-head {
+      background: var(--card); border-radius: 14px; padding: 10px 12px;
+      border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+      text-align: center; font-weight: 700; font-size: 20px;
+    }
+    .reader-sub { margin-top: 4px; font-weight: 500; font-size: 12px; color: var(--sub); }
+
+    .verses { background: var(--card); border-radius: 14px; border: 1px solid var(--line); overflow: hidden; }
+    .verse-row {
+      display: grid; grid-template-columns: 1fr 42px; gap: 8px; align-items: start;
+      /* 这里使用了动态的段落间距 */
+      padding: var(--para-spacing) 10px var(--para-spacing) 12px;
+      border-bottom: 1px solid var(--line);
+      user-select: none; transition: background-color 0.2s;
+    }
+    .verse-row:last-child { border-bottom: none; }
+    .verse-row:active { background: var(--primary-soft); }
+    
+    .verse-text {
+      /* 动态排版变量应用 */
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      word-break: break-word; color: var(--text);
+      transition: font-size 0.2s, line-height 0.2s;
+    }
+    .verse-no { font-weight: 700; color: var(--primary); margin-right: 6px; font-size: 0.85em; }
+
+    .star-btn {
+      height: 32px; width: 32px; border: none; background: transparent; border-radius: 8px;
+      font-size: 22px; line-height: 1; cursor: pointer; color: var(--line);
+      padding: 0; margin-top: 2px; justify-self: center; transition: 0.2s;
+    }
+    .star-btn.active { color: #f5a623; }
+    .star-btn:active { background: var(--line); transform: scale(0.95); }
+
+    /* 底部工具栏 */
+    .toolbar {
+      position: sticky; bottom: 0; z-index: 15; margin-top: -4px;
+      padding: 8px 12px calc(8px + var(--safe-bottom));
+      background: var(--bg); opacity: 0.98;
+      border-top: 1px solid var(--line);
+      display: flex; gap: 8px; align-items: center; justify-content: space-between;
+    }
+    .toolbar .btn {
+      flex: 1; min-height: 42px; border: 1px solid var(--line); background: var(--card);
+      border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; color: var(--text);
+    }
+    .toolbar .btn:active { transform: scale(0.98); background: var(--line); }
+    .toolbar .btn.primary { background: var(--primary-soft); color: var(--primary); border-color: transparent; }
+
+    /* 阅读设置面板 (Bottom Sheet) */
+    .settings-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 40;
+      opacity: 0; pointer-events: none; transition: 0.3s;
+    }
+    .settings-overlay.show { opacity: 1; pointer-events: auto; }
+    
+    .settings-panel {
+      position: fixed; bottom: -100%; left: 0; right: 0;
+      background: var(--card); border-radius: 20px 20px 0 0;
+      padding: 20px 20px calc(20px + var(--safe-bottom)); z-index: 50;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1); transition: 0.3s cubic-bezier(0.1, 0.8, 0.2, 1);
+    }
+    .settings-panel.show { bottom: 0; }
+    .settings-row { display: flex; align-items: center; margin-bottom: 20px; gap: 12px; }
+    .settings-label { width: 45px; font-size: 14px; color: var(--sub); font-weight: bold; }
+    .settings-controls { flex: 1; display: flex; gap: 10px; }
+    
+    .ctrl-btn {
+      flex: 1; padding: 10px 0; border: 1px solid var(--line); background: transparent;
+      border-radius: 10px; color: var(--text); font-size: 15px; font-weight: bold; cursor: pointer;
+    }
+    .ctrl-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .ctrl-btn:active { background: var(--line); }
+    
+    .ctrl-group { flex: 1; display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .ctrl-group button {
+      flex: 1; background: transparent; border: none; padding: 10px 0;
+      color: var(--text); font-size: 18px; cursor: pointer;
+    }
+    .ctrl-group button:active { background: var(--line); }
+    .ctrl-group .val { flex: 1; text-align: center; line-height: 42px; font-size: 14px; border-left: 1px solid var(--line); border-right: 1px solid var(--line); color: var(--sub); }
+
+    .empty { text-align: center; color: var(--sub); padding: 28px 12px; background: var(--card); border-radius: 14px; border: 1px solid var(--line); }
+    .toast {
+      position: fixed; left: 50%; bottom: calc(80px + var(--safe-bottom)); transform: translateX(-50%);
+      background: rgba(0,0,0,0.82); color: #fff; border-radius: 99px; padding: 10px 18px;
+      font-size: 14px; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .toast.show { opacity: 1; }
+    .loading { padding: 24px; text-align: center; color: var(--sub); }
+    .badge { display: inline-block; font-size: 11px; color: var(--sub); background: var(--line); border-radius: 999px; padding: 3px 8px; margin-left: 6px; }
+
+    @media (min-width: 768px) {
+      body { background: #111; }
+      #app { max-width: 500px; margin: 0 auto; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+    }
   </style>
 </head>
 <body>
-<div id="app">
-  <div class="topbar">
-    <div class="topbar-inner">
-      <button id="btnBack" class="icon-btn" aria-label="返回">‹</button>
-      <div id="topTitle" class="title">微读圣经Lite Web</div>
-      <button id="btnHome" class="icon-btn" aria-label="首页">⌂</button>
-    </div>
-  </div>
 
-  <div id="main" class="main">
-    <div id="viewLoading" class="loading">正在加载圣经数据…</div>
-
-    <div id="viewBooks" class="hidden">
-      <div class="panel-card">
-        <div class="section-title">请选择书卷</div>
-        <div id="bookGrid" class="book-grid"></div>
+  <div id="app">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <button id="btnBack" class="icon-btn" aria-label="返回">‹</button>
+        <div id="topTitle" class="title">微读圣经Lite Web</div>
+        <button id="btnHome" class="icon-btn" aria-label="首页">⌂</button>
       </div>
     </div>
 
-    <div id="viewChapters" class="hidden">
-      <div class="panel-card">
-        <div id="chaptersTitle" class="section-title">选择章节</div>
-        <div id="chapterGrid" class="chapter-grid"></div>
-      </div>
-    </div>
-
-    <div id="viewReader" class="hidden reader-wrap">
-      <div class="reader-head">
-        <div id="readerTitle">创世记 第 1 章</div>
-        <div class="reader-sub">点击经文可朗读；点右侧星标可收藏/取消收藏</div>
-      </div>
-      <div id="verseContainer" class="verses"></div>
-      <div class="tips" id="ttsTip">若点击经文后无声音，请尝试使用系统浏览器（非 App 内置页）打开。</div>
-    </div>
-
-    <div id="viewFavorites" class="hidden">
-      <div class="panel-card">
-        <div class="section-title">收藏夹 <span id="favCountBadge" class="badge">0 条</span></div>
-        <div id="favoriteList"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="toolbar" class="toolbar hidden">
-    <button id="btnFontMinus" class="btn" type="button">字体-</button>
-    <div id="fontIndicator" class="font-indicator">22px</div>
-    <button id="btnFontPlus" class="btn" type="button">字体+</button>
-    <button id="btnFavorites" class="btn primary" type="button">收藏夹</button>
-    <button id="btnStopSpeak" class="btn warn" type="button">停止朗读</button>
-  </div>
-</div>
-
-<div id="toast" class="toast"></div>
-
-<script>
-/***********************
- * 1) 工具函数
- ***********************/
-const $ = (id) => document.getElementById(id);
-
-const STORAGE_KEYS = {
-  fontSize: '_font_size_px',
-  favorites: '_favorites_v1',
-  dataVersion: '_bible_data_version_v1' // 仅存版本号（小数据）
-};
-
-// 每次你更新 data 文件内容时，把版本号 +1，强制重建缓存
-const DATA_VERSION = '2026-02-24-v1';
-
-function showToast(msg, ms = 1800) {
-  const el = $('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(() => el.classList.remove('show'), ms);
-}
-
-function safeJSONParse(str, fallback) {
-  try { return JSON.parse(str); } catch (e) { return fallback; }
-}
-
-function normalizeVerseText(v) {
-  return String(v || '').replace(/\s+/g, '');
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-/***********************
- * 2) CommonJS 数据文件加载
- ***********************/
-async function loadCommonJSArray(url) {
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`加载失败: ${url}`);
-  const txt = await res.text();
-  const m = txt.match(/module\.exports\s*=\s*([\s\S]*?)\s*;?\s*$/);
-  if (!m) throw new Error(`无法解析数据文件（未找到 module.exports）: ${url}`);
-  const arr = (new Function(`return (${m[1]});`))(); // 本地受信任数据
-  if (!Array.isArray(arr)) throw new Error(`数据格式错误（不是数组）: ${url}`);
-  return arr;
-}
-
-/***********************
- * 3) IndexedDB 缓存（大数据专用）
- ***********************/
-const BibleCache = {
-  DB_NAME: 'bible_lite_cache',
-  DB_VERSION: 1,
-  STORE: 'kv',
-  KEY: 'bible_data_bundle',
-
-  _dbPromise: null,
-
-  async openDB() {
-    if (this._dbPromise) return this._dbPromise;
-    this._dbPromise = new Promise((resolve, reject) => {
-      if (!('indexedDB' in window)) {
-        reject(new Error('当前浏览器不支持 IndexedDB'));
-        return;
-      }
-      const req = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains(this.STORE)) {
-          db.createObjectStore(this.STORE);
-        }
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error || new Error('IndexedDB 打开失败'));
-    });
-    return this._dbPromise;
-  },
-
-  async get(key = this.KEY) {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(this.STORE, 'readonly');
-      const store = tx.objectStore(this.STORE);
-      const req = store.get(key);
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => reject(req.error || new Error('IndexedDB 读取失败'));
-    });
-  },
-
-  async set(key = this.KEY, value) {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(this.STORE, 'readwrite');
-      const store = tx.objectStore(this.STORE);
-      const req = store.put(value, key);
-      req.onsuccess = () => resolve(true);
-      req.onerror = () => reject(req.error || new Error('IndexedDB 写入失败'));
-    });
-  },
-
-  async clear() {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(this.STORE, 'readwrite');
-      const store = tx.objectStore(this.STORE);
-      const req = store.clear();
-      req.onsuccess = () => resolve(true);
-      req.onerror = () => reject(req.error || new Error('IndexedDB 清空失败'));
-    });
-  }
-};
-
-/***********************
- * 4) 书卷名称映射
- ***********************/
-const BOOK_NAME_CN = {
-  gn:'创世记', ex:'出埃及记', lv:'利未记', nm:'民数记', dt:'申命记',
-  js:'约书亚记', jg:'士师记', rt:'路得记',
-  '1sm':'撒母耳记上', '2sm':'撒母耳记下',
-  '1ki':'列王纪上', '2ki':'列王纪下',
-  '1ch':'历代志上', '2ch':'历代志下',
-  ezr:'以斯拉记', ne:'尼希米记', et:'以斯帖记',
-  jb:'约伯记', ps:'诗篇', pr:'箴言', ec:'传道书', so:'雅歌',
-  is:'以赛亚书', jr:'耶利米书', lm:'耶利米哀歌', ek:'以西结书', dn:'但以理书',
-  hs:'何西阿书', jl:'约珥书', am:'阿摩司书', ob:'俄巴底亚书', jn:'约拿书',
-  mi:'弥迦书', na:'那鸿书', hk:'哈巴谷书', zp:'西番雅书', hg:'哈该书',
-  zc:'撒迦利亚书', ml:'玛拉基书',
-  mt:'马太福音', mk:'马可福音', lk:'路加福音', jo:'约翰福音',
-  ac:'使徒行传', rm:'罗马书',
-  '1co':'哥林多前书', '2co':'哥林多后书',
-  gl:'加拉太书', ep:'以弗所书', pp:'腓立比书', cl:'歌罗西书',
-  '1ts':'帖撒罗尼迦前书', '2ts':'帖撒罗尼迦后书',
-  '1tm':'提摩太前书', '2tm':'提摩太后书',
-  tt:'提多书', phm:'腓利门书', hb:'希伯来书', jm:'雅各书',
-  '1pe':'彼得前书', '2pe':'彼得后书',
-  '1jo':'约翰一书', '2jo':'约翰二书', '3jo':'约翰三书',
-  jd:'犹大书', re:'启示录',
-
-  gen:'创世记', genesis:'创世记', exo:'出埃及记', exodus:'出埃及记',
-  lev:'利未记', leviticus:'利未记', num:'民数记', numbers:'民数记',
-  deu:'申命记', deuteronomy:'申命记', jos:'约书亚记', joshua:'约书亚记',
-  jdg:'士师记', judg:'士师记', judges:'士师记', rut:'路得记', ruth:'路得记',
-  '1sa':'撒母耳记上', '2sa':'撒母耳记下',
-  '1kg':'列王纪上', '1kgs':'列王纪上', '1kings':'列王纪上',
-  '2kg':'列王纪下', '2kgs':'列王纪下', '2kings':'列王纪下',
-  '1chr':'历代志上', '2chr':'历代志下',
-  ezra:'以斯拉记', neh:'尼希米记', nehemiah:'尼希米记', est:'以斯帖记', esther:'以斯帖记',
-  job:'约伯记', psa:'诗篇', psalms:'诗篇', pro:'箴言', proverbs:'箴言',
-  ecc:'传道书', ecclesiastes:'传道书', sng:'雅歌', songofsolomon:'雅歌',
-  isa:'以赛亚书', isaiah:'以赛亚书', jer:'耶利米书', jeremiah:'耶利米书',
-  lam:'耶利米哀歌', lamentations:'耶利米哀歌', eze:'以西结书', ezekiel:'以西结书',
-  dan:'但以理书', daniel:'但以理书',
-  hos:'何西阿书', hosea:'何西阿书', joe:'约珥书', joel:'约珥书',
-  amo:'阿摩司书', amos:'阿摩司书', oba:'俄巴底亚书', obadiah:'俄巴底亚书',
-  jon:'约拿书', jonah:'约拿书', mic:'弥迦书', micah:'弥迦书',
-  nah:'那鸿书', nahum:'那鸿书', hab:'哈巴谷书', habakkuk:'哈巴谷书',
-  zep:'西番雅书', zephaniah:'西番雅书', hag:'哈该书', haggai:'哈该书',
-  zec:'撒迦利亚书', zechariah:'撒迦利亚书', mal:'玛拉基书', malachi:'玛拉基书',
-  mat:'马太福音', matthew:'马太福音', mar:'马可福音', mark:'马可福音',
-  luk:'路加福音', luke:'路加福音', jhn:'约翰福音', john:'约翰福音',
-  act:'使徒行传', acts:'使徒行传', rom:'罗马书', romans:'罗马书',
-  '1cor':'哥林多前书', '2cor':'哥林多后书', gal:'加拉太书', galatians:'加拉太书',
-  eph:'以弗所书', ephesians:'以弗所书', php:'腓立比书', phil:'腓立比书', philippians:'腓立比书',
-  col:'歌罗西书', colossians:'歌罗西书', '1ths':'帖撒罗尼迦前书', '2ths':'帖撒罗尼迦后书',
-  '1tim':'提摩太前书', '2tim':'提摩太后书', tit:'提多书', titus:'提多书',
-  philemon:'腓利门书', heb:'希伯来书', hebrews:'希伯来书', jas:'雅各书', james:'雅各书',
-  '1pet':'彼得前书', '2pet':'彼得后书', '1jn':'约翰一书', '2jn':'约翰二书', '3jn':'约翰三书',
-  jude:'犹大书', rev:'启示录', revelation:'启示录'
-};
-
-function getBookDisplayName(book) {
-  const abbrevKey = String(book.abbrev || '').trim().toLowerCase();
-  const nameKey = String(book.name || '').trim().toLowerCase();
-  return BOOK_NAME_CN[abbrevKey] || BOOK_NAME_CN[nameKey] || book.name || book.abbrev;
-}
-
-/***********************
- * 5) 数据层（支持 IndexedDB 缓存）
- ***********************/
-const DB = {
-  loaded: false,
-  loading: false,
-  loadError: null,
-  loadingPromise: null,
-
-  allBooks: [],
-  index: {},
-  bookMeta: [],
-
-  _buildIndex(allBooks, otCount) {
-    this.allBooks = allBooks;
-    this.index = {};
-    this.bookMeta = allBooks.map((b, idx) => {
-      this.index[b.abbrev] = b;
-      return {
-        id: b.abbrev,
-        name: getBookDisplayName(b),
-        chapterCount: Array.isArray(b.chapters) ? b.chapters.length : 0,
-        testament: idx < otCount ? 'old' : 'new'
-      };
-    });
-  },
-
-  async _tryLoadFromCache() {
-    try {
-      const version = localStorage.getItem(STORAGE_KEYS.dataVersion);
-      if (version !== DATA_VERSION) return false;
-
-      const bundle = await BibleCache.get();
-      if (!bundle || !Array.isArray(bundle.OT) || !Array.isArray(bundle.NT)) return false;
-
-      const OT = bundle.OT;
-      const NT = bundle.NT;
-      this._buildIndex([...OT, ...NT], OT.length);
-      return true;
-    } catch (e) {
-      console.warn('读取缓存失败，准备回退网络加载：', e);
-      return false;
-    }
-  },
-
-  async _loadFromFilesAndCache() {
-    const [OT, NT] = await Promise.all([
-      loadCommonJSArray('./data/old_testament_data_simplified.js'),
-      loadCommonJSArray('./data/new_testament_data_simplified.js')
-    ]);
-
-    this._buildIndex([...OT, ...NT], OT.length);
-
-    // 后台缓存，不影响当前可用性
-    try {
-      await BibleCache.set(BibleCache.KEY, {
-        version: DATA_VERSION,
-        savedAt: Date.now(),
-        OT, NT
-      });
-      localStorage.setItem(STORAGE_KEYS.dataVersion, DATA_VERSION);
-    } catch (e) {
-      console.warn('写入 IndexedDB 缓存失败（不影响使用）:', e);
-    }
-  },
-
-  async init() {
-    if (this.loaded) return;
-    if (this.loadingPromise) return this.loadingPromise;
-
-    this.loading = true;
-    this.loadError = null;
-
-    this.loadingPromise = (async () => {
-      // 先尝试缓存
-      const hit = await this._tryLoadFromCache();
-      if (!hit) {
-        // 缓存未命中/损坏 -> 重新加载并重建缓存
-        await this._loadFromFilesAndCache();
-      }
-      this.loaded = true;
-    })();
-
-    try {
-      await this.loadingPromise;
-    } catch (err) {
-      this.loadError = err;
-      throw err;
-    } finally {
-      this.loading = false;
-      this.loadingPromise = null;
-    }
-  },
-
-  async ensureInit() {
-    if (this.loaded) return;
-    return this.init();
-  },
-
-  getBooks() {
-    return this.bookMeta.slice();
-  },
-
-  getBookMetaById(bookId) {
-    return this.bookMeta.find(b => b.id === bookId) || null;
-  },
-
-  getChapterVerses(bookId, chapter) {
-    const b = this.index[bookId];
-    if (!b) return [];
-    const ch = Number(chapter);
-    if (!Number.isFinite(ch) || ch <= 0) return [];
-    const raw = (b.chapters && b.chapters[ch - 1]) ? b.chapters[ch - 1] : [];
-    return raw.map((t, i) => ({ verse: i + 1, text: normalizeVerseText(t) }));
-  }
-};
-
-/***********************
- * 6) 收藏（localStorage 小数据）
- ***********************/
-const FavoriteStore = {
-  _cache: null,
-  load() {
-    if (this._cache) return this._cache;
-    const data = safeJSONParse(localStorage.getItem(STORAGE_KEYS.favorites), []);
-    this._cache = Array.isArray(data) ? data : [];
-    return this._cache;
-  },
-  save() {
-    localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(this.load()));
-  },
-  keyOf(item) { return `${item.bookId}|${item.chapter}|${item.verse}`; },
-  has(bookId, chapter, verse) {
-    return this.load().some(it => it.bookId === bookId && it.chapter === Number(chapter) && it.verse === Number(verse));
-  },
-  toggle(item) {
-    const arr = this.load();
-    const key = this.keyOf(item);
-    const idx = arr.findIndex(it => this.keyOf(it) === key);
-    if (idx >= 0) {
-      arr.splice(idx, 1);
-      this.save();
-      return false;
-    } else {
-      arr.unshift({
-        bookId: item.bookId, bookName: item.bookName,
-        chapter: Number(item.chapter), verse: Number(item.verse),
-        text: item.text, ts: Date.now()
-      });
-      this.save();
-      return true;
-    }
-  },
-  list() { return this.load().slice().sort((a,b) => b.ts - a.ts); },
-  remove(bookId, chapter, verse) {
-    const arr = this.load();
-    const key = `${bookId}|${Number(chapter)}|${Number(verse)}`;
-    const idx = arr.findIndex(it => `${it.bookId}|${it.chapter}|${it.verse}` === key);
-    if (idx >= 0) { arr.splice(idx, 1); this.save(); return true; }
-    return false;
-  }
-};
-
-/***********************
- * 7) 字体设置
- ***********************/
-const FontSetting = {
-  min:16,max:36,step:2,
-  get() {
-    const n = Number(localStorage.getItem(STORAGE_KEYS.fontSize));
-    return Number.isFinite(n) ? Math.max(this.min, Math.min(this.max, n)) : 22;
-  },
-  set(px) {
-    const v = Math.max(this.min, Math.min(this.max, Number(px)));
-    localStorage.setItem(STORAGE_KEYS.fontSize, String(v));
-    document.documentElement.style.setProperty('--font-size', v + 'px');
-    $('fontIndicator').textContent = v + 'px';
-    return v;
-  },
-  inc(){ return this.set(this.get()+this.step); },
-  dec(){ return this.set(this.get()-this.step); }
-};
-
-/***********************
- * 8) 朗读（TTS）
- ***********************/
-const TTS = {
-  synth: window.speechSynthesis || null,
-  voices: [], ready: false, currentKey: '', currentRowEl: null,
-
-  init() {
-    if (!this.synth) return;
-    this.refreshVoices();
-    if ('onvoiceschanged' in this.synth) {
-      this.synth.addEventListener('voiceschanged', () => this.refreshVoices());
-    }
-    [200,800,1500].forEach(ms => setTimeout(() => this.refreshVoices(), ms));
-    this.ready = true;
-  },
-
-  refreshVoices() {
-    if (!this.synth) return;
-    try {
-      const list = this.synth.getVoices ? this.synth.getVoices() : [];
-      if (Array.isArray(list) && list.length) this.voices = list;
-    } catch(e){}
-  },
-
-  pickVoice() {
-    if (!this.voices || !this.voices.length) return null;
-    const zh = this.voices.find(v => /zh|cmn/i.test(v.lang || ''));
-    if (zh) return zh;
-    const def = this.voices.find(v => v.default);
-    return def || this.voices[0] || null;
-  },
-
-  stop() {
-    if (!this.synth) return;
-    try { this.synth.cancel(); } catch(e) {}
-    this.clearSpeakingStyle();
-    this.currentKey = '';
-  },
-
-  clearSpeakingStyle() {
-    if (this.currentRowEl) {
-      this.currentRowEl.classList.remove('speaking');
-      this.currentRowEl = null;
-    }
-  },
-
-  speak(text, key, rowEl) {
-    if (!this.synth || typeof window.SpeechSynthesisUtterance === 'undefined') {
-      showToast('当前浏览器不支持网页朗读（可换系统浏览器再试）', 2200);
-      return;
-    }
-    if (!text || !text.trim()) return;
-    this.stop();
-
-    const u = new SpeechSynthesisUtterance(text);
-    const voice = this.pickVoice();
-    if (voice) u.voice = voice;
-    u.lang = (voice && voice.lang) ? voice.lang : 'zh-CN';
-    u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
-
-    u.onstart = () => {
-      this.currentKey = key || '';
-      this.clearSpeakingStyle();
-      if (rowEl) { this.currentRowEl = rowEl; rowEl.classList.add('speaking'); }
-    };
-    u.onend = () => { this.clearSpeakingStyle(); this.currentKey = ''; };
-    u.onerror = () => {
-      this.clearSpeakingStyle(); this.currentKey = '';
-      showToast('朗读失败：当前浏览器或环境限制了语音功能', 2400);
-    };
-
-    try {
-      this.synth.speak(u);
-      setTimeout(() => {
-        if (!this.synth) return;
-        if (!this.synth.speaking && !this.synth.pending && !TTS._warnedSilent) {
-          TTS._warnedSilent = true;
-          showToast('若无声音，请使用系统浏览器打开（微信/QQ内置浏览器常受限）', 2600);
-        }
-      }, 400);
-    } catch(e) {
-      showToast('当前环境不支持语音朗读', 2200);
-    }
-  }
-};
-
-/***********************
- * 9) 应用状态 + 路由
- ***********************/
-const AppState = {
-  view:'loading', // loading | books | chapters | reader | favorites
-  currentBookId:'', currentBookName:'', currentChapter:1,
-  history:[],
-
-  push(viewName){
-    if (this.view && this.view !== 'loading') this.history.push(this.view);
-    this.view = viewName; render();
-  },
-  go(viewName){ this.view = viewName; render(); },
-  back() {
-    if (this.view === 'reader') TTS.stop();
-    if (!this.history.length) { this.go('books'); return; }
-    this.view = this.history.pop(); render();
-  }
-};
-
-/***********************
- * 10) 渲染
- ***********************/
-function setTopTitle(text) {
-  $('topTitle').textContent = text || '微读圣经Lite Web';
-}
-function showOnly(viewId) {
-  ['viewLoading','viewBooks','viewChapters','viewReader','viewFavorites'].forEach(id => $(id).classList.add('hidden'));
-  $(viewId).classList.remove('hidden');
-}
-
-function renderBooks() {
-  const grid = $('bookGrid');
-  const titleEl = document.querySelector('#viewBooks .section-title');
-  grid.innerHTML = '';
-
-  if (!DB.loaded) {
-    if (titleEl) titleEl.textContent = '请选择书卷（数据加载中…）';
-    for (let i = 0; i < 12; i++) {
-      const el = document.createElement('div');
-      el.className = 'book-item';
-      el.style.opacity = '0.65';
-      el.innerHTML = `<div>加载中…</div><small>-- 章</small>`;
-      grid.appendChild(el);
-    }
-    if (DB.loadError) {
-      grid.innerHTML = `<div class="empty" style="grid-column:1 / -1;">
-        书卷数据加载失败：${escapeHtml(DB.loadError.message || String(DB.loadError))}
-        <br><br>请检查 data 目录、文件名及 http/https 打开方式
-      </div>`;
-    }
-    return;
-  }
-
-  if (titleEl) titleEl.textContent = '请选择书卷';
-  const books = DB.getBooks();
-  books.forEach(book => {
-    const el = document.createElement('div');
-    el.className = 'book-item';
-    el.innerHTML = `<div>${escapeHtml(book.name)}</div><small>${book.chapterCount} 章</small>`;
-    el.addEventListener('click', async () => {
-      AppState.currentBookId = book.id;
-      AppState.currentBookName = book.name;
-      await renderChapters();
-      AppState.push('chapters');
-      $('main').scrollTop = 0;
-    });
-    grid.appendChild(el);
-  });
-}
-
-async function renderChapters() {
-  try {
-    if (!DB.loaded) {
-      showToast('书卷数据加载中，请稍候…');
-      await DB.ensureInit();
-      renderBooks();
-    }
-
-    $('chaptersTitle').textContent = `${AppState.currentBookName} · 选择章节`;
-    const meta = DB.getBookMetaById(AppState.currentBookId);
-    const count = meta ? meta.chapterCount : 0;
-    const grid = $('chapterGrid');
-    grid.innerHTML = '';
-
-    for (let i = 1; i <= count; i++) {
-      const el = document.createElement('div');
-      el.className = 'chapter-item';
-      el.textContent = i;
-      el.addEventListener('click', async () => {
-        AppState.currentChapter = i;
-        await renderReader();
-        AppState.push('reader');
-        $('main').scrollTop = 0;
-      });
-      grid.appendChild(el);
-    }
-  } catch (err) {
-    console.error(err);
-    showToast('数据加载失败，无法打开章节', 2200);
-  }
-}
-
-async function renderReader() {
-  try {
-    if (!DB.loaded) await DB.ensureInit();
-    const bookId = AppState.currentBookId;
-    const bookName = AppState.currentBookName;
-    const chapter = AppState.currentChapter;
-    const verses = DB.getChapterVerses(bookId, chapter);
-
-    $('readerTitle').textContent = `${bookName} 第 ${chapter} 章`;
-    const box = $('verseContainer');
-    box.innerHTML = '';
-
-    if (!verses.length) {
-      box.innerHTML = `<div class="empty">该章节暂无数据</div>`;
-      return;
-    }
-
-    verses.forEach(v => {
-      const row = document.createElement('div');
-      row.className = 'verse-row';
-      const fav = FavoriteStore.has(bookId, chapter, v.verse);
-
-      row.innerHTML = `
-        <div class="verse-text">
-          <span class="verse-no">${chapter}:${v.verse}</span>${escapeHtml(v.text)}
+    <div id="main" class="main">
+      <div id="viewLoading" class="loading">正在加载圣经数据…</div>
+
+      <div id="viewBooks" class="hidden">
+        <div class="panel-card">
+          <div class="section-title">请选择书卷</div>
+          <div id="bookGrid" class="book-grid"></div>
         </div>
-        <button class="star-btn ${fav ? 'active' : ''}" type="button" aria-label="收藏">${fav ? '★' : '☆'}</button>
-      `;
-
-      row.addEventListener('click', () => {
-        const speakText = `${bookName} 第${chapter}章，第${v.verse}节。${v.text}`;
-        TTS.speak(speakText, `${bookId}|${chapter}|${v.verse}`, row);
-      });
-
-      const starBtn = row.querySelector('.star-btn');
-      starBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const nowFav = FavoriteStore.toggle({ bookId, bookName, chapter, verse: v.verse, text: v.text });
-        starBtn.classList.toggle('active', nowFav);
-        starBtn.textContent = nowFav ? '★' : '☆';
-        showToast(nowFav ? '已收藏' : '已取消收藏');
-        if (AppState.view === 'favorites') renderFavorites();
-      });
-
-      box.appendChild(row);
-    });
-  } catch (err) {
-    console.error(err);
-    $('verseContainer').innerHTML = `<div class="empty">章节加载失败：${escapeHtml(err.message || String(err))}</div>`;
-  }
-}
-
-function renderFavorites() {
-  const list = FavoriteStore.list();
-  $('favCountBadge').textContent = `${list.length} 条`;
-  const container = $('favoriteList');
-  container.innerHTML = '';
-
-  if (!list.length) {
-    container.innerHTML = `<div class="empty">暂无收藏内容</div>`;
-    return;
-  }
-
-  list.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'verse-row';
-    row.innerHTML = `
-      <div class="verse-text">
-        <span class="verse-no">${escapeHtml(item.bookName)} ${item.chapter}:${item.verse}</span>
-        ${escapeHtml(item.text)}
       </div>
-      <button class="star-btn active" type="button" aria-label="取消收藏">★</button>
-    `;
 
-    row.addEventListener('click', async () => {
-      AppState.currentBookId = item.bookId;
-      AppState.currentBookName = item.bookName;
-      AppState.currentChapter = item.chapter;
+      <div id="viewChapters" class="hidden">
+        <div class="panel-card">
+          <div id="chaptersTitle" class="section-title">选择章节</div>
+          <div id="chapterGrid" class="chapter-grid"></div>
+        </div>
+      </div>
 
-      await renderReader();
-      AppState.push('reader');
-      $('main').scrollTop = 0;
+      <div id="viewReader" class="hidden reader-wrap">
+        <div class="reader-head">
+          <div id="readerTitle">创世记 第 1 章</div>
+          <div class="reader-sub">点右侧星标可收藏或取消收藏</div>
+        </div>
+        <div id="verseContainer" class="verses"></div>
+      </div>
 
-      requestAnimationFrame(() => {
-        const rows = Array.from(document.querySelectorAll('#verseContainer .verse-row'));
-        const target = rows[item.verse - 1];
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setTimeout(() => {
-            const speakText = `${item.bookName} 第${item.chapter}章，第${item.verse}节。${item.text}`;
-            TTS.speak(speakText, `${item.bookId}|${item.chapter}|${item.verse}`, target);
-          }, 350);
-        }
-      });
-    });
+      <div id="viewFavorites" class="hidden">
+        <div class="panel-card">
+          <div class="section-title">
+            我的收藏 <span id="favCountBadge" class="badge">0 条</span>
+          </div>
+          <div id="favoriteList"></div>
+        </div>
+      </div>
+    </div>
 
-    row.querySelector('.star-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      FavoriteStore.remove(item.bookId, item.chapter, item.verse);
-      renderFavorites();
-      showToast('已取消收藏');
-    });
+    <div id="toolbar" class="toolbar hidden">
+      <button id="btnFavorites" class="btn primary" type="button">★ 收藏夹</button>
+      <button id="btnSettings" class="btn" type="button">Aa 阅读设置</button>
+    </div>
+  </div>
 
-    container.appendChild(row);
-  });
-}
+  <div id="settingsOverlay" class="settings-overlay"></div>
+  <div id="settingsPanel" class="settings-panel">
+    <div class="settings-row">
+      <div class="settings-label">主题</div>
+      <div class="settings-controls">
+        <button class="ctrl-btn" data-theme="light">白天</button>
+        <button class="ctrl-btn" data-theme="parchment">羊皮纸</button>
+        <button class="ctrl-btn" data-theme="dark">夜间</button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">字体</div>
+      <div class="settings-controls">
+        <div class="ctrl-group">
+          <button id="btnFontMinus">A-</button>
+          <div class="val" id="valFont">22</div>
+          <button id="btnFontPlus">A+</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">行距</div>
+      <div class="settings-controls">
+        <div class="ctrl-group">
+          <button id="btnLineMinus">-</button>
+          <div class="val" id="valLine">1.8</div>
+          <button id="btnLinePlus">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">段距</div>
+      <div class="settings-controls">
+        <div class="ctrl-group">
+          <button id="btnParaMinus">-</button>
+          <div class="val" id="valPara">14</div>
+          <button id="btnParaPlus">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-function render() {
-  $('btnBack').style.visibility = (AppState.view === 'books' || AppState.view === 'loading') ? 'hidden' : 'visible';
-  $('toolbar').classList.toggle('hidden', AppState.view !== 'reader');
+  <div id="toast" class="toast"></div>
 
-  if (AppState.view === 'loading') { setTopTitle('微读圣经Lite Web'); showOnly('viewLoading'); return; }
-  if (AppState.view === 'books')   { setTopTitle('微读圣经Lite Web'); showOnly('viewBooks'); return; }
-  if (AppState.view === 'chapters'){ setTopTitle(AppState.currentBookName || '选择章节'); showOnly('viewChapters'); return; }
-  if (AppState.view === 'reader')  { setTopTitle(`${AppState.currentBookName} ${AppState.currentChapter}章`); showOnly('viewReader'); return; }
-  if (AppState.view === 'favorites'){ setTopTitle('收藏夹'); showOnly('viewFavorites'); return; }
-}
+  <script>
+    /***********************
+     * 1) 工具函数与全局常量
+     ***********************/
+    const $ = (id) => document.getElementById(id);
+    const STORAGE_KEYS = {
+      favorites: '_favorites_v1',
+      settings: '_reader_settings_v2'
+    };
 
-/***********************
- * 11) 事件绑定
- ***********************/
-function bindEvents() {
-  $('btnBack').addEventListener('click', () => AppState.back());
-
-  $('btnHome').addEventListener('click', () => {
-    TTS.stop();
-    AppState.history = [];
-    AppState.go('books');
-    $('main').scrollTop = 0;
-  });
-
-  $('btnFontMinus').addEventListener('click', () => {
-    const v = FontSetting.dec();
-    showToast(`字体 ${v}px`);
-  });
-  $('btnFontPlus').addEventListener('click', () => {
-    const v = FontSetting.inc();
-    showToast(`字体 ${v}px`);
-  });
-
-  $('btnFavorites').addEventListener('click', () => {
-    renderFavorites();
-    AppState.push('favorites');
-    $('main').scrollTop = 0;
-  });
-
-  $('btnStopSpeak').addEventListener('click', () => {
-    TTS.stop();
-    showToast('已停止朗读');
-  });
-
-  document.addEventListener('visibilitychange', () => { if (document.hidden) TTS.stop(); });
-  window.addEventListener('pagehide', () => TTS.stop());
-
-  // 仅供调试：控制台执行 window.__clearBibleCache()
-  window.__clearBibleCache = async () => {
-    try {
-      await BibleCache.clear();
-      localStorage.removeItem(STORAGE_KEYS.dataVersion);
-      showToast('已清空圣经缓存，下次将重新加载', 2200);
-    } catch (e) {
-      console.error(e);
-      showToast('清缓存失败（见控制台）', 2200);
+    function showToast(msg, ms = 1500) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => el.classList.remove('show'), ms);
     }
-  };
-}
 
-/***********************
- * 12) 启动
- ***********************/
-async function bootstrap() {
-  try {
-    FontSetting.set(FontSetting.get());
-    bindEvents();
-    TTS.init();
+    function safeJSONParse(str, fallback) {
+      try { return JSON.parse(str) || fallback; } catch (e) { return fallback; }
+    }
 
-    // 先显示书卷页（占位）
-    AppState.go('books');
-    renderBooks();
+    function normalizeVerseText(v) {
+      return String(v || '').replace(/\s+/g, '');
+    }
 
-    // 后台异步加载（先缓存、后文件）
-    DB.init()
-      .then(() => {
-        renderBooks();
-        // 可以提示命中缓存（可选）
-        // showToast('数据已就绪');
-      })
-      .catch((err) => {
-        console.error(err);
-        renderBooks();
-        showToast('圣经数据加载失败', 2200);
+    // 动态加载数据
+    async function loadCommonJSArray(url) {
+      const res = await fetch(url, { cache: 'force-cache' });
+      if (!res.ok) throw new Error(`加载失败: ${url}`);
+      const txt = await res.text();
+      const m = txt.match(/module\.exports\s*=\s*([\s\S]*?)\s*;?\s*$/);
+      if (!m) throw new Error(`无法解析数据文件: ${url}`);
+      return (new Function(`return (${m[1]});`))();
+    }
+
+    /***********************
+     * 2) 设置与排版系统 (Theme & Typography)
+     ***********************/
+    const Settings = {
+      data: {
+        theme: 'light', // light, dark, parchment
+        fontSize: 22,   // 16 ~ 36
+        lineHeight: 1.8,// 1.2 ~ 2.4
+        paraSpacing: 14 // 8 ~ 24
+      },
+      load() {
+        const saved = safeJSONParse(localStorage.getItem(STORAGE_KEYS.settings), null);
+        if (saved) this.data = { ...this.data, ...saved };
+        this.applyAll();
+      },
+      save() {
+        localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(this.data));
+        this.applyAll();
+      },
+      applyAll() {
+        // 应用主题 CSS 类
+        document.body.className = `theme-${this.data.theme}`;
+        // 更新顶部状态栏颜色 (PWA)
+        const colors = { light: '#f7f7f7', dark: '#121212', parchment: '#f4ebd8' };
+        $('themeColorMeta').content = colors[this.data.theme];
+        
+        // 应用排版 CSS 变量
+        const root = document.documentElement;
+        root.style.setProperty('--font-size', `${this.data.fontSize}px`);
+        root.style.setProperty('--line-height', this.data.lineHeight.toFixed(1));
+        root.style.setProperty('--para-spacing', `${this.data.paraSpacing}px`);
+
+        // 更新面板 UI 显示数值
+        $('valFont').textContent = this.data.fontSize;
+        $('valLine').textContent = this.data.lineHeight.toFixed(1);
+        $('valPara').textContent = this.data.paraSpacing;
+
+        // 更新主题按钮高亮状态
+        document.querySelectorAll('.ctrl-btn[data-theme]').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.theme === this.data.theme);
+        });
+      },
+      setTheme(t) { this.data.theme = t; this.save(); },
+      changeFont(delta) { 
+        this.data.fontSize = Math.max(16, Math.min(36, this.data.fontSize + delta)); 
+        this.save(); 
+      },
+      changeLine(delta) { 
+        this.data.lineHeight = Math.max(1.2, Math.min(2.4, this.data.lineHeight + delta)); 
+        this.save(); 
+      },
+      changePara(delta) { 
+        this.data.paraSpacing = Math.max(8, Math.min(30, this.data.paraSpacing + delta)); 
+        this.save(); 
+      }
+    };
+
+    /***********************
+     * 3) 书名映射与数据层
+     ***********************/
+    const BOOK_NAME_CN = {
+      gn:'创世记', ex:'出埃及记', lv:'利未记', nm:'民数记', dt:'申命记',
+      js:'约书亚记', jg:'士师记', rt:'路得记', '1sm':'撒母耳记上', '2sm':'撒母耳记下',
+      '1ki':'列王纪上', '2ki':'列王纪下', '1ch':'历代志上', '2ch':'历代志下',
+      ezr:'以斯拉记', ne:'尼希米记', et:'以斯帖记', jb:'约伯记', ps:'诗篇', pr:'箴言',
+      ec:'传道书', so:'雅歌', is:'以赛亚书', jr:'耶利米书', lm:'耶利米哀歌', ek:'以西结书',
+      dn:'但以理书', hs:'何西阿书', jl:'约珥书', am:'阿摩司书', ob:'俄巴底亚书', jn:'约拿书',
+      mi:'弥迦书', na:'那鸿书', hk:'哈巴谷书', zp:'西番雅书', hg:'哈该书', zc:'撒迦利亚书', ml:'玛拉基书',
+      mt:'马太福音', mk:'马可福音', lk:'路加福音', jo:'约翰福音', ac:'使徒行传', rm:'罗马书',
+      '1co':'哥林多前书', '2co':'哥林多后书', gl:'加拉太书', ep:'以弗所书', pp:'腓立比书', cl:'歌罗西书',
+      '1ts':'帖撒罗尼迦前书', '2ts':'帖撒罗尼迦后书', '1tm':'提摩太前书', '2tm':'提摩太后书',
+      tt:'提多书', phm:'腓利门书', hb:'希伯来书', jm:'雅各书', '1pe':'彼得前书', '2pe':'彼得后书',
+      '1jo':'约翰一书', '2jo':'约翰二书', '3jo':'约翰三书', jd:'犹大书', re:'启示录'
+    };
+
+    function getBookDisplayName(book) {
+      const abbrevKey = String(book.abbrev || '').trim().toLowerCase();
+      return BOOK_NAME_CN[abbrevKey] || book.name || book.abbrev;
+    }
+
+    const DB = {
+      loaded: false, index: {}, bookMeta: [],
+      async init() {
+        if (this.loaded) return;
+        const [OT, NT] = await Promise.all([
+          loadCommonJSArray('./data/old_testament_data_simplified.js'),
+          loadCommonJSArray('./data/new_testament_data_simplified.js')
+        ]);
+        const allBooks = [...OT, ...NT];
+        this.bookMeta = allBooks.map(b => {
+          this.index[b.abbrev] = b;
+          return { id: b.abbrev, name: getBookDisplayName(b), chapterCount: b.chapters?.length || 0 };
+        });
+        this.loaded = true;
+      },
+      getBooks() { return this.bookMeta; },
+      getBookMetaById(id) { return this.bookMeta.find(b => b.id === id); },
+      getChapterVerses(id, chNum) {
+        const b = this.index[id];
+        if (!b || !b.chapters || !b.chapters[chNum - 1]) return [];
+        return b.chapters[chNum - 1].map((text, i) => ({ verse: i + 1, text: normalizeVerseText(text) }));
+      }
+    };
+
+    /***********************
+     * 4) 收藏系统
+     ***********************/
+    const FavoriteStore = {
+      load() { return safeJSONParse(localStorage.getItem(STORAGE_KEYS.favorites), []); },
+      save(data) { localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(data)); },
+      has(bookId, chapter, verse) {
+        return this.load().some(it => it.bookId === bookId && it.chapter === chapter && it.verse === verse);
+      },
+      toggle(item) {
+        const arr = this.load();
+        const idx = arr.findIndex(it => it.bookId === item.bookId && it.chapter === item.chapter && it.verse === item.verse);
+        if (idx >= 0) { arr.splice(idx, 1); this.save(arr); return false; }
+        arr.unshift({ ...item, ts: Date.now() });
+        this.save(arr); return true;
+      },
+      remove(bookId, chapter, verse) {
+        const arr = this.load();
+        const idx = arr.findIndex(it => it.bookId === bookId && it.chapter === chapter && it.verse === verse);
+        if (idx >= 0) { arr.splice(idx, 1); this.save(arr); }
+      }
+    };
+
+    /***********************
+     * 5) 状态管理与渲染
+     ***********************/
+    const AppState = {
+      view: 'loading', currentBookId: '', currentBookName: '', currentChapter: 1, history: [],
+      push(viewName) {
+        if (this.view && this.view !== 'loading') this.history.push(this.view);
+        this.view = viewName; render();
+      },
+      go(viewName) { this.view = viewName; render(); },
+      back() {
+        if (!this.history.length) { this.go('books'); return; }
+        this.view = this.history.pop(); render();
+      }
+    };
+
+    function setTopTitle(text) { $('topTitle').textContent = text; }
+    function showOnly(viewId) {
+      ['viewLoading', 'viewBooks', 'viewChapters', 'viewReader', 'viewFavorites'].forEach(id => {
+        $(id).classList.add('hidden');
       });
-  } catch (err) {
-    console.error(err);
-    $('viewLoading').innerHTML = `<div class="empty">初始化失败：${escapeHtml(err.message || String(err))}</div>`;
-    showOnly('viewLoading');
-    setTopTitle('加载失败');
-  }
-}
+      $(viewId).classList.remove('hidden');
+    }
 
-bootstrap();
-</script>
+    function renderBooks() {
+      const grid = $('bookGrid'); grid.innerHTML = '';
+      DB.getBooks().forEach(book => {
+        const el = document.createElement('div');
+        el.className = 'book-item';
+        el.innerHTML = `<div>${book.name}</div><small>${book.chapterCount} 章</small>`;
+        el.onclick = () => {
+          AppState.currentBookId = book.id; AppState.currentBookName = book.name;
+          renderChapters(); AppState.push('chapters'); $('main').scrollTop = 0;
+        };
+        grid.appendChild(el);
+      });
+    }
+
+    function renderChapters() {
+      $('chaptersTitle').textContent = `${AppState.currentBookName} · 选择章节`;
+      const grid = $('chapterGrid'); grid.innerHTML = '';
+      const count = DB.getBookMetaById(AppState.currentBookId)?.chapterCount || 0;
+      for (let i = 1; i <= count; i++) {
+        const el = document.createElement('div');
+        el.className = 'chapter-item'; el.textContent = i;
+        el.onclick = () => {
+          AppState.currentChapter = i; renderReader(); AppState.push('reader'); $('main').scrollTop = 0;
+        };
+        grid.appendChild(el);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function renderReader() {
+      const { currentBookId: bid, currentBookName: bname, currentChapter: ch } = AppState;
+      $('readerTitle').textContent = `${bname} 第 ${ch} 章`;
+      const box = $('verseContainer'); box.innerHTML = '';
+      
+      const verses = DB.getChapterVerses(bid, ch);
+      if (!verses.length) { box.innerHTML = `<div class="empty">该章节暂无数据</div>`; return; }
+
+      verses.forEach(v => {
+        const row = document.createElement('div');
+        row.className = 'verse-row';
+        const fav = FavoriteStore.has(bid, ch, v.verse);
+        
+        row.innerHTML = `
+          <div class="verse-text"><span class="verse-no">${ch}:${v.verse}</span>${escapeHtml(v.text)}</div>
+          <button class="star-btn ${fav ? 'active' : ''}"> ${fav ? '★' : '☆'} </button>
+        `;
+
+        // 仅处理收藏逻辑，移除朗读
+        row.querySelector('.star-btn').onclick = (e) => {
+          e.stopPropagation();
+          const isFav = FavoriteStore.toggle({ bookId: bid, bookName: bname, chapter: ch, verse: v.verse, text: v.text });
+          e.target.classList.toggle('active', isFav);
+          e.target.textContent = isFav ? '★' : '☆';
+          showToast(isFav ? '已收藏' : '已取消收藏');
+        };
+        box.appendChild(row);
+      });
+    }
+
+    function renderFavorites() {
+      const list = FavoriteStore.load().sort((a,b) => b.ts - a.ts);
+      $('favCountBadge').textContent = `${list.length} 条`;
+      const box = $('favoriteList'); box.innerHTML = '';
+      if (!list.length) { box.innerHTML = `<div class="empty">暂无收藏内容</div>`; return; }
+
+      list.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'verse-row';
+        row.innerHTML = `
+          <div class="verse-text"><span class="verse-no">${item.bookName} ${item.chapter}:${item.verse}</span>${escapeHtml(item.text)}</div>
+          <button class="star-btn active">★</button>
+        `;
+        row.onclick = () => {
+          AppState.currentBookId = item.bookId; AppState.currentBookName = item.bookName; AppState.currentChapter = item.chapter;
+          renderReader(); AppState.push('reader');
+          setTimeout(() => {
+            const targetRow = document.querySelectorAll('#verseContainer .verse-row')[item.verse - 1];
+            if (targetRow) targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+        };
+        row.querySelector('.star-btn').onclick = (e) => {
+          e.stopPropagation();
+          FavoriteStore.remove(item.bookId, item.chapter, item.verse);
+          renderFavorites(); showToast('已取消收藏');
+        };
+        box.appendChild(row);
+      });
+    }
+
+    function render() {
+      $('btnBack').style.visibility = (AppState.view === 'books' || AppState.view === 'loading') ? 'hidden' : 'visible';
+      $('toolbar').classList.toggle('hidden', AppState.view !== 'reader');
+      
+      const views = {
+        'loading': { title: '微读圣经Lite', fn: () => showOnly('viewLoading') },
+        'books': { title: '圣经目录', fn: () => showOnly('viewBooks') },
+        'chapters': { title: AppState.currentBookName || '选择章节', fn: () => showOnly('viewChapters') },
+        'reader': { title: `${AppState.currentBookName} ${AppState.currentChapter}章`, fn: () => showOnly('viewReader') },
+        'favorites': { title: '我的收藏', fn: () => showOnly('viewFavorites') }
+      };
+      
+      setTopTitle(views[AppState.view].title);
+      views[AppState.view].fn();
+    }
+
+    /***********************
+     * 6) 事件绑定与初始化
+     ***********************/
+    function bindEvents() {
+      $('btnBack').onclick = () => AppState.back();
+      $('btnHome').onclick = () => { AppState.history = []; AppState.go('books'); $('main').scrollTop = 0; };
+      $('btnFavorites').onclick = () => { renderFavorites(); AppState.push('favorites'); };
+      
+      // 设置面板控制
+      $('btnSettings').onclick = () => {
+        $('settingsOverlay').classList.add('show');
+        $('settingsPanel').classList.add('show');
+      };
+      $('settingsOverlay').onclick = () => {
+        $('settingsOverlay').classList.remove('show');
+        $('settingsPanel').classList.remove('show');
+      };
+
+      // 主题切换
+      document.querySelectorAll('.ctrl-btn[data-theme]').forEach(btn => {
+        btn.onclick = (e) => Settings.setTheme(e.target.dataset.theme);
+      });
+
+      // 排版调节
+      $('btnFontMinus').onclick = () => Settings.changeFont(-2);
+      $('btnFontPlus').onclick = () => Settings.changeFont(2);
+      $('btnLineMinus').onclick = () => Settings.changeLine(-0.2);
+      $('btnLinePlus').onclick = () => Settings.changeLine(0.2);
+      $('btnParaMinus').onclick = () => Settings.changePara(-2);
+      $('btnParaPlus').onclick = () => Settings.changePara(2);
+    }
+
+    async function bootstrap() {
+      try {
+        Settings.load();
+        bindEvents();
+        await DB.init();
+        renderBooks();
+        AppState.go('books');
+      } catch (err) {
+        $('viewLoading').innerHTML = `<div style="color:red">数据加载失败，请刷新重试<br><small>${err.message}</small></div>`;
+      }
+    }
+
+    bootstrap();
+  </script>
 </body>
 </html>
