@@ -510,14 +510,14 @@
       async init() {
         if (this.loaded) return;
 
-       // const [OT, NT] = await Promise.all([
-       //   loadCommonJSArray('./data/old_testament_data_simplified.js'),
-       //   loadCommonJSArray('./data/new_testament_data_simplified.js')
-        //]);
         const [OT, NT] = await Promise.all([
-              loadJsonArray('./data/old_testament_data_simplified.json'), // 改为 json
-              loadJsonArray('./data/new_testament_data_simplified.json')
-            ]);
+          loadCommonJSArray('./data/old_testament_data_simplified.js'),
+          loadCommonJSArray('./data/new_testament_data_simplified.js')
+        ]);
+       // const [OT, NT] = await Promise.all([
+       //       loadJsonArray('./data/old_testament_data_simplified.json'), // 改为 json
+       //       loadJsonArray('./data/new_testament_data_simplified.json')
+        //    ]);
         this.allBooks = [...OT, ...NT];
         this.index = {};
         this.bookMeta = this.allBooks.map((b, idx) => {
@@ -1090,4 +1090,5 @@
   </script>
 </body>
 </html>
+
 
