@@ -439,32 +439,52 @@
     }
 
     function normalizeVerseText(v) {
-      return String(v || '').replace(/\s+/g, '');
+      // 版本1：只去首尾空白，避免把正文内部空白全部吃掉
+      return String(v || '').trim();
     }
+
+    // ===== 加速版：CommonJS 数据加载（带缓存）=====
+    const __dataTextCache = new Map();   // url -> 原始文本
+    const __dataArrayCache = new Map();  // url -> 解析后的数组
 
     // 兼容你的 data/*.js 是 CommonJS: module.exports = [...]
     async function loadCommonJSArray(url) {
-      //const res = await fetch(url, { cache: 'no-store' });
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`加载失败: ${url}`);
-      const txt = await res.text();
+      if (__dataArrayCache.has(url)) {
+        return __dataArrayCache.get(url);
+      }
 
-      // 允许末尾有分号
+      let txt = __dataTextCache.get(url);
+      if (!txt) {
+        const res = await fetch(url, { cache: 'force-cache' });
+        if (!res.ok) throw new Error(`加载失败: ${url}`);
+        txt = await res.text();
+        __dataTextCache.set(url, txt);
+      }
+
       const m = txt.match(/module\.exports\s*=\s*([\s\S]*?)\s*;?\s*$/);
       if (!m) {
         throw new Error(`无法解析数据文件（未找到 module.exports）: ${url}`);
       }
+
       // 这里只用于你本地受信任的数据文件
       const arr = (new Function(`return (${m[1]});`))();
       if (!Array.isArray(arr)) {
         throw new Error(`数据格式错误（不是数组）: ${url}`);
       }
+
+      __dataArrayCache.set(url, arr);
       return arr;
+    }
+
+    // 你后续如果改成 JSON 可直接用这个函数（暂未启用）
+    async function loadJsonArray(url) {
+      const res = await fetch(url, { cache: 'force-cache' });
+      if (!res.ok) throw new Error(`加载失败: ${url}`);
+      return await res.json();
     }
 
     /***********************
      * 2) 书卷名称映射（英文 abbrev -> 中文）
-     *    你的数据里 name 多数是英文，这里统一显示中文
      ***********************/
     const BOOK_NAME_CN = {
       gn:'创世记', ex:'出埃及记', lv:'利未记', nm:'民数记', dt:'申命记',
@@ -490,11 +510,7 @@
       '1jo':'约翰一书', '2jo':'约翰二书', '3jo':'约翰三书',
       jd:'犹大书', re:'启示录'
     };
-    async function loadJsonArray(url) {
-      const res = await fetch(url, { cache: 'force-cache' }); // 强缓存
-      if (!res.ok) throw new Error(`加载失败: ${url}`);
-      return await res.json(); // 原生解析，速度提升10倍以上
-    }
+
     function getBookDisplayName(book) {
       return BOOK_NAME_CN[book.abbrev] || book.name || book.abbrev;
     }
@@ -504,9 +520,10 @@
      ***********************/
     const BibleDB = {
       loaded: false,
-      allBooks: [],       // 原始对象数组 [{abbrev,name,chapters:[[]...]}]
-      index: {},          // abbrev -> book
-      bookMeta: [],       // [{id,name,chapterCount,testament}]
+      allBooks: [],
+      index: {},
+      bookMeta: [],
+
       async init() {
         if (this.loaded) return;
 
@@ -631,7 +648,7 @@
     };
 
     /***********************
-     * 6) 朗读（TTS）
+     * 6) 朗读（TTS）- 版本1增强版
      ***********************/
     const TTS = {
       synth: window.speechSynthesis || null,
@@ -640,19 +657,24 @@
       currentKey: '',
       currentRowEl: null,
 
+      // 新增：移动端解锁相关
+      unlocked: false,
+      unlockTried: false,
+      _warnedSilent: false,
+
       init() {
         if (!this.synth) return;
         this.refreshVoices();
 
-        // 某些浏览器需异步触发 voiceschanged 后才拿得到语音列表
+        // voices 列表通常异步到达
         if ('onvoiceschanged' in this.synth) {
           this.synth.addEventListener('voiceschanged', () => {
             this.refreshVoices();
           });
         }
 
-        // 再做几次延迟刷新，兼容移动端延迟注入声音列表
-        [200, 800, 1500].forEach(ms => {
+        // 延迟补刷（兼容移动端延迟注入）
+        [150, 500, 1200, 2000].forEach(ms => {
           setTimeout(() => this.refreshVoices(), ms);
         });
 
@@ -673,12 +695,50 @@
 
       pickVoice() {
         if (!this.voices || !this.voices.length) return null;
-        // 优先中文
-        const zh = this.voices.find(v => /zh|cmn/i.test(v.lang || ''));
-        if (zh) return zh;
-        // 其次系统默认
+
+        const zhCandidates = this.voices.filter(v => /zh|cmn/i.test(v.lang || ''));
+        const preferred =
+          zhCandidates.find(v => /zh-CN|cmn-CN/i.test(v.lang || '')) ||
+          zhCandidates.find(v => /zh-TW|cmn-TW/i.test(v.lang || '')) ||
+          zhCandidates.find(v => /zh-HK/i.test(v.lang || ''));
+        if (preferred) return preferred;
+        if (zhCandidates.length) return zhCandidates[0];
+
         const def = this.voices.find(v => v.default);
         return def || this.voices[0] || null;
+      },
+
+      // 新增：首次用户手势解锁（移动端关键）
+      unlock() {
+        if (!this.synth || this.unlocked || this.unlockTried) return;
+        this.unlockTried = true;
+
+        try {
+          this.refreshVoices();
+
+          const u = new SpeechSynthesisUtterance(' ');
+          u.volume = 0; // 静音尝试
+          u.rate = 1;
+          u.pitch = 1;
+          u.lang = 'zh-CN';
+
+          const voice = this.pickVoice();
+          if (voice) u.voice = voice;
+
+          u.onstart = () => { this.unlocked = true; };
+          u.onend = () => { this.unlocked = true; };
+          u.onerror = () => {
+            // 某些环境会报错，但后续仍可能可用
+          };
+
+          try { this.synth.cancel(); } catch (e) {}
+          this.synth.speak(u);
+
+          setTimeout(() => this.refreshVoices(), 300);
+          setTimeout(() => this.refreshVoices(), 1000);
+        } catch (e) {
+          // ignore
+        }
       },
 
       stop() {
@@ -702,55 +762,70 @@
         }
         if (!text || !text.trim()) return;
 
-        // 同一条再次点击：重新读
-        this.stop();
+        // 首次点击时尝试解锁（移动端）
+        if (!this.unlocked) this.unlock();
 
-        const u = new SpeechSynthesisUtterance(text);
-        const voice = this.pickVoice();
-        if (voice) u.voice = voice;
-        u.lang = (voice && voice.lang) ? voice.lang : 'zh-CN';
-        u.rate = 1.0;
-        u.pitch = 1.0;
-        u.volume = 1.0;
+        // 刷新 voice 列表（防止首次为空）
+        this.refreshVoices();
 
-        u.onstart = () => {
-          this.currentKey = key || '';
-          this.clearSpeakingStyle();
-          if (rowEl) {
-            this.currentRowEl = rowEl;
-            rowEl.classList.add('speaking');
-          }
-        };
-        u.onend = () => {
-          this.clearSpeakingStyle();
-          this.currentKey = '';
-        };
-        u.onerror = () => {
-          this.clearSpeakingStyle();
-          this.currentKey = '';
-          showToast('朗读失败：当前浏览器或环境限制了语音功能', 2400);
-        };
+        // 停止当前朗读（不要立刻接 speak）
+        try { this.synth.cancel(); } catch (e) {}
+        this.clearSpeakingStyle();
+        this.currentKey = '';
 
-        try {
-          this.synth.speak(u);
+        const doSpeak = () => {
+          const u = new SpeechSynthesisUtterance(text);
+          const voice = this.pickVoice();
+          if (voice) u.voice = voice;
+          u.lang = (voice && voice.lang) ? voice.lang : 'zh-CN';
+          u.rate = 1.0;
+          u.pitch = 1.0;
+          u.volume = 1.0;
 
-          // 某些环境（尤其内置 WebView）调用成功但不发声，给个温和提示
-          setTimeout(() => {
-            if (!this.synth) return;
-            const speaking = this.synth.speaking;
-            const pending = this.synth.pending;
-            if (!speaking && !pending) {
-              // 不一定是失败，但常见于不支持/被限制
-              // 不打断用户，只提示一次
-              if (!TTS._warnedSilent) {
-                TTS._warnedSilent = true;
+          u.onstart = () => {
+            this.currentKey = key || '';
+            this.clearSpeakingStyle();
+            if (rowEl) {
+              this.currentRowEl = rowEl;
+              rowEl.classList.add('speaking');
+            }
+          };
+
+          u.onend = () => {
+            this.clearSpeakingStyle();
+            this.currentKey = '';
+          };
+
+          u.onerror = (e) => {
+            this.clearSpeakingStyle();
+            this.currentKey = '';
+            console.warn('TTS error:', e);
+            showToast('朗读失败：当前浏览器或环境限制了语音功能', 2400);
+          };
+
+          try {
+            if (typeof this.synth.resume === 'function') {
+              try { this.synth.resume(); } catch (e) {}
+            }
+
+            this.synth.speak(u);
+
+            setTimeout(() => {
+              if (!this.synth) return;
+              const speaking = !!this.synth.speaking;
+              const pending = !!this.synth.pending;
+              if (!speaking && !pending && !this._warnedSilent) {
+                this._warnedSilent = true;
                 showToast('若无声音，请使用系统浏览器打开（微信/QQ内置浏览器常受限）', 2600);
               }
-            }
-          }, 400);
-        } catch (e) {
-          showToast('当前环境不支持语音朗读', 2200);
-        }
+            }, 500);
+          } catch (e) {
+            showToast('当前环境不支持语音朗读', 2200);
+          }
+        };
+
+        // 关键：给 cancel 留缓冲时间，移动端更稳定
+        setTimeout(doSpeak, 50);
       }
     };
 
@@ -859,52 +934,56 @@
 
       if (!verses.length) {
         box.innerHTML = `<div class="empty">该章节暂无数据</div>`;
-        return;
-      }
+      } else {
+        verses.forEach(v => {
+          const row = document.createElement('div');
+          row.className = 'verse-row';
+          const fav = FavoriteStore.has(bookId, chapter, v.verse);
 
-      verses.forEach(v => {
-        const row = document.createElement('div');
-        row.className = 'verse-row';
-        const fav = FavoriteStore.has(bookId, chapter, v.verse);
+          row.innerHTML = `
+            <div class="verse-text">
+              <span class="verse-no">${chapter}:${v.verse}</span>${escapeHtml(v.text)}
+            </div>
+            <button class="star-btn ${fav ? 'active' : ''}" type="button" aria-label="收藏">
+              ${fav ? '★' : '☆'}
+            </button>
+          `;
 
-        row.innerHTML = `
-          <div class="verse-text">
-            <span class="verse-no">${chapter}:${v.verse}</span>${escapeHtml(v.text)}
-          </div>
-          <button class="star-btn ${fav ? 'active' : ''}" type="button" aria-label="收藏">
-            ${fav ? '★' : '☆'}
-          </button>
-        `;
-
-        // 点击经文 -> 朗读
-        row.addEventListener('click', () => {
-          const speakText = `${bookName} 第${chapter}章，第${v.verse}节。${v.text}`;
-          const key = `${bookId}|${chapter}|${v.verse}`;
-          TTS.speak(speakText, key, row);
-        });
-
-        // 点击星标 -> 收藏/取消收藏（阻止触发朗读）
-        const starBtn = row.querySelector('.star-btn');
-        starBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const nowFav = FavoriteStore.toggle({
-            bookId,
-            bookName,
-            chapter,
-            verse: v.verse,
-            text: v.text
+          // 点击经文 -> 朗读
+          row.addEventListener('click', () => {
+            const speakText = `${bookName} 第${chapter}章，第${v.verse}节。${v.text}`;
+            const key = `${bookId}|${chapter}|${v.verse}`;
+            TTS.speak(speakText, key, row);
           });
 
-          starBtn.classList.toggle('active', nowFav);
-          starBtn.textContent = nowFav ? '★' : '☆';
-          showToast(nowFav ? '已收藏' : '已取消收藏');
+          // 点击星标 -> 收藏/取消收藏（阻止触发朗读）
+          const starBtn = row.querySelector('.star-btn');
+          starBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const nowFav = FavoriteStore.toggle({
+              bookId,
+              bookName,
+              chapter,
+              verse: v.verse,
+              text: v.text
+            });
 
-          // 如果当前正显示收藏夹，顺便刷新
-          if (AppState.view === 'favorites') renderFavorites();
+            starBtn.classList.toggle('active', nowFav);
+            starBtn.textContent = nowFav ? '★' : '☆';
+            showToast(nowFav ? '已收藏' : '已取消收藏');
+
+            if (AppState.view === 'favorites') renderFavorites();
+          });
+
+          box.appendChild(row);
         });
+      }
 
-        box.appendChild(row);
-      });
+      // 阅读页 TTS 提示（更明确）
+      const ttsSupported = !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
+      $('ttsTip').textContent = ttsSupported
+        ? '点击经文可朗读；若无声音，请先点击页面一次，并尽量使用系统浏览器（非App内置页）。'
+        : '当前浏览器不支持网页朗读，建议使用系统浏览器打开。';
     }
 
     function renderFavorites() {
@@ -938,10 +1017,8 @@
           AppState.push('reader');
           $('main').scrollTop = 0;
 
-          // 滚动定位到该节（下一帧）
           requestAnimationFrame(() => {
-            const selector = `.verse-row`;
-            const rows = Array.from(document.querySelectorAll('#verseContainer ' + selector));
+            const rows = Array.from(document.querySelectorAll('#verseContainer .verse-row'));
             const target = rows[item.verse - 1];
             if (target) {
               target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -966,10 +1043,7 @@
     }
 
     function render() {
-      // 顶部按钮显隐逻辑
       $('btnBack').style.visibility = (AppState.view === 'books' || AppState.view === 'loading') ? 'hidden' : 'visible';
-
-      // 工具栏只在阅读页显示
       $('toolbar').classList.toggle('hidden', AppState.view !== 'reader');
 
       if (AppState.view === 'loading') {
@@ -1024,7 +1098,7 @@
         $('main').scrollTop = 0;
       });
 
-      // 字体调节（你要求改成“字体- / 字体+”）
+      // 字体调节
       $('btnFontMinus').addEventListener('click', () => {
         const v = FontSetting.dec();
         showToast(`字体 ${v}px`);
@@ -1047,9 +1121,18 @@
         showToast('已停止朗读');
       });
 
-      // 页面切换时停止朗读（切后台等）
+      // 首次手势解锁 TTS（移动端关键）
+      const tryUnlockTTS = () => TTS.unlock();
+      document.addEventListener('touchend', tryUnlockTTS, { passive: true, once: true });
+      document.addEventListener('click', tryUnlockTTS, { passive: true, once: true });
+
+      // 页面切换时停止朗读 + 返回前台刷新 voices
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) TTS.stop();
+        if (document.hidden) {
+          TTS.stop();
+        } else {
+          TTS.refreshVoices();
+        }
       });
       window.addEventListener('pagehide', () => TTS.stop());
     }
@@ -1059,12 +1142,19 @@
      ***********************/
     async function bootstrap() {
       try {
+        // 先做本地 UI 初始化（体感更快）
         FontSetting.set(FontSetting.get());
         bindEvents();
         TTS.init();
 
+        setTopTitle('微读圣经Lite Web');
+        $('viewLoading').textContent = '正在加载圣经目录…';
+        showOnly('viewLoading');
+
+        // 再加载数据
         await BibleDB.init();
 
+        // 渲染首页
         renderBooks();
         AppState.go('books');
       } catch (err) {
@@ -1075,7 +1165,7 @@
             请检查：<br>
             1）data目录是否存在；<br>
             2）两个数据文件名是否完全一致；<br>
-            3）是否通过 http/https 打开（不要直接双击 file://）。 
+            3）是否通过 http/https 打开（不要直接双击 file://）。
           </div>
         `;
         showOnly('viewLoading');
@@ -1087,6 +1177,3 @@
   </script>
 </body>
 </html>
-
-
-
