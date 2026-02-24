@@ -724,9 +724,9 @@
 
     const STORAGE_KEYS = {
 
-      fontSize: 'bible_font_size_px',
+      fontSize: '_font_size_px',
 
-      favorites: 'bible_favorites_v1'
+      favorites: '_favorites_v1'
 
     };
 
@@ -810,7 +810,7 @@
 
      ***********************/
 
-    const BOOK_NAME_CN = {
+
 const BOOK_NAME_CN = {
   // 旧约 (Old Testament)
   gen: '创世记', genesis: '创世记',
@@ -902,7 +902,7 @@ function getBookDisplayName(book) {
 
      ***********************/
 
-    const BibleDB = {
+    const DB = {
 
       loaded: false,
 
@@ -1504,7 +1504,7 @@ function getBookDisplayName(book) {
 
     function renderBooks() {
 
-      const books = BibleDB.getBooks();
+      const books = DB.getBooks();
 
       const grid = $('bookGrid');
 
@@ -1552,7 +1552,7 @@ function getBookDisplayName(book) {
 
       $('chaptersTitle').textContent = `${AppState.currentBookName} · 选择章节`;
 
-      const meta = BibleDB.getBookMetaById(AppState.currentBookId);
+      const meta = DB.getBookMetaById(AppState.currentBookId);
 
       const count = meta ? meta.chapterCount : 0;
 
@@ -1598,7 +1598,7 @@ function getBookDisplayName(book) {
 
       const chapter = AppState.currentChapter;
 
-      const verses = BibleDB.getChapterVerses(bookId, chapter);
+      const verses = DB.getChapterVerses(bookId, chapter);
 
 
 
@@ -2024,7 +2024,7 @@ function getBookDisplayName(book) {
 
 
 
-        await BibleDB.init();
+        await DB.init();
 
 
 
@@ -2071,6 +2071,7 @@ function getBookDisplayName(book) {
 </body>
 
 </html>
+
 
 
 
