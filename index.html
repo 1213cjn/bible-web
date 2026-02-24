@@ -112,65 +112,31 @@
 
 
     .main {
-
       flex: 1;
-
       overflow: auto;
-
       -webkit-overflow-scrolling: touch;
-
       padding: 12px 12px calc(var(--toolbar-h) + var(--safe-bottom) + 12px);
-
     }
-
-
-
     .hidden { display: none !important; }
-
-
-
     .panel-card {
-
       background: var(--card);
-
       border-radius: var(--radius);
-
       box-shadow: var(--shadow);
-
       padding: 12px;
-
       border: 1px solid #f2f2f2;
-
     }
-
-
-
     .section-title {
-
       margin: 8px 0 12px;
-
       font-size: 16px;
-
       color: var(--sub);
-
       text-align: center;
-
     }
-
-
-
     /* 书卷列表 */
-
     .book-grid {
-
       display: grid;
-
       grid-template-columns: repeat(2, minmax(0, 1fr));
-
       gap: 10px;
-
     }
-
     .book-item {
 
       border: 1px solid var(--line);
@@ -194,41 +160,23 @@
       user-select: none;
 
     }
-
     .book-item:active {
-
       transform: scale(0.98);
-
       background: #fafafa;
-
     }
-
     .book-item small {
-
       display: block;
-
       color: var(--sub);
-
       margin-top: 4px;
-
       font-size: 12px;
-
     }
-
-
-
     /* 章节列表 */
 
     .chapter-grid {
-
       display: grid;
-
       grid-template-columns: repeat(5, minmax(0, 1fr));
-
       gap: 10px;
-
     }
-
     .chapter-item {
 
       height: 46px;
@@ -863,51 +811,33 @@
      ***********************/
 
     const BOOK_NAME_CN = {
+gen:'创世记', exo:'出埃及记', lev:'利未记', num:'民数记', deu:'申命记',
+  jos:'约书亚记', jdg:'士师记', judg:'士师记', rut:'路得记',
+  '1sa':'撒母耳记上', '2sa':'撒母耳记下',
+  '1kg':'列王纪上', '2kg':'列王纪下',
+  '1kgs':'列王纪上', '2kgs':'列王纪下',
+  '1chr':'历代志上', '2chr':'历代志下',
+  est:'以斯帖记',
+  job:'约伯记',
+  psa:'诗篇', psm:'诗篇',
+  pro:'箴言', pv:'箴言',
+  ecc:'传道书', ecl:'传道书',
+  sng:'雅歌', song:'雅歌',
+  isa:'以赛亚书', jer:'耶利米书', lam:'耶利米哀歌', eze:'以西结书', dan:'但以理书',
+  hos:'何西阿书', joe:'约珥书', amo:'阿摩司书', oba:'俄巴底亚书', jon:'约拿书',
+  mic:'弥迦书', nah:'那鸿书', hab:'哈巴谷书', zep:'西番雅书', hag:'哈该书',
+  zec:'撒迦利亚书', mal:'玛拉基书',
 
-      gn:'创世记', ex:'出埃及记', lv:'利未记', nm:'民数记', dt:'申命记',
-
-      js:'约书亚记', jg:'士师记', rt:'路得记',
-
-      '1sm':'撒母耳记上', '2sm':'撒母耳记下',
-
-      '1ki':'列王纪上', '2ki':'列王纪下',
-
-      '1ch':'历代志上', '2ch':'历代志下',
-
-      ezr:'以斯拉记', ne:'尼希米记', et:'以斯帖记',
-
-      jb:'约伯记', ps:'诗篇', pr:'箴言', ec:'传道书', so:'雅歌',
-
-      is:'以赛亚书', jr:'耶利米书', lm:'耶利米哀歌', ek:'以西结书', dn:'但以理书',
-
-      hs:'何西阿书', jl:'约珥书', am:'阿摩司书', ob:'俄巴底亚书', jn:'约拿书',
-
-      mi:'弥迦书', na:'那鸿书', hk:'哈巴谷书', zp:'西番雅书', hg:'哈该书',
-
-      zc:'撒迦利亚书', ml:'玛拉基书',
-
-
-
-      mt:'马太福音', mk:'马可福音', lk:'路加福音', jo:'约翰福音',
-
-      ac:'使徒行传', rm:'罗马书',
-
-      '1co':'哥林多前书', '2co':'哥林多后书',
-
-      gl:'加拉太书', ep:'以弗所书', pp:'腓立比书', cl:'歌罗西书',
-
-      '1th':'帖撒罗尼迦前书', '2th':'帖撒罗尼迦后书',
-
-      '1tm':'提摩太前书', '2tm':'提摩太后书',
-
-      tt:'提多书', phm:'腓利门书', hb:'希伯来书', jm:'雅各书',
-
-      '1pe':'彼得前书', '2pe':'彼得后书',
-
-      '1jo':'约翰一书', '2jo':'约翰二书', '3jo':'约翰三书',
-
-      jd:'犹大书', re:'启示录'
-
+  mat:'马太福音', mar:'马可福音', luk:'路加福音', jhn:'约翰福音', john:'约翰福音',
+  act:'使徒行传', rom:'罗马书',
+  '1cor':'哥林多前书', '2cor':'哥林多后书',
+  gal:'加拉太书', eph:'以弗所书', php:'腓立比书', phil:'腓立比书', col:'歌罗西书',
+  '1ths':'帖撒罗尼迦前书', '2ths':'帖撒罗尼迦后书',
+  '1tim':'提摩太前书', '2tim':'提摩太后书',
+  tit:'提多书', phm:'腓利门书', heb:'希伯来书', jas:'雅各书',
+  '1pet':'彼得前书', '2pet':'彼得后书',
+  '1jn':'约翰一书', '2jn':'约翰二书', '3jn':'约翰三书',
+  jude:'犹大书', rev:'启示录'
     };
 
 
@@ -2094,3 +2024,4 @@ function getBookDisplayName(book) {
 </body>
 
 </html>
+
