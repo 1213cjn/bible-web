@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>经文阅读Lite</title>
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --card: #ffffff;
+      --text: #1f2328;
+      --muted: #6b7280;
+      --line: #eceef1;
+      --primary: #2563eb;
+      --favbg: #fff9e6;
+      --shadow: 0 6px 20px rgba(0,0,0,.06);
+      --radius: 14px;
+      --toolbarH: 64px;
+      --safeBottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+
+    .page {
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+    }
+    .topbar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-icon {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .title {
+      flex: 1;
+      text-align: center;
+      font-weight: 700;
+      font-size: 18px;
+      padding: 0 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sub {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      min-height: 16px;
+    }
+
+    .content {
+      flex: 1;
+      overflow: auto;
+      padding: 12px;
+      padding-bottom: calc(var(--toolbarH) + var(--safeBottom) + 16px);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+    }
+    @media (min-width: 720px) {
+      .grid.books { grid-template-columns: repeat(4, minmax(0,1fr)); }
+      .grid.chapters { grid-template-columns: repeat(8, minmax(0,1fr)); }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .book-item, .chapter-item {
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .08s ease;
+    }
+    .book-item:active, .chapter-item:active { transform: scale(.98); }
+
+    .book-name { font-weight: 700; }
+    .book-meta { margin-top: 6px; color: var(--muted); font-size: 12px; }
+
+    .chapter-item { font-weight: 700; }
+
+    .verse {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .verse:last-child { border-bottom: none; }
+    .verse.fav { background: var(--favbg); border-radius: 10px; padding-left: 8px; padding-right: 8px; }
+
+    .verse-main {
+      flex: 1;
+      cursor: pointer;
+      user-select: none;
+      line-height: 1.9;
+    }
+    .ref {
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .txt {
+      color: #333;
+    }
+    .star {
+      border: none;
+      background: transparent;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      color: #666;
+      padding: 4px 2px;
+    }
+    .star.on { color: #f59e0b; }
+
+    .empty, .loading, .error {
+      text-align: center;
+      color: var(--muted);
+      padding: 24px 12px;
+    }
+
+    .fav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .fav-item {
+      padding: 12px;
+    }
+    .fav-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .fav-ref {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .fav-text {
+      line-height: 1.8;
+      color: #333;
+      cursor: pointer;
+    }
+    .fav-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .btn-small {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toolbar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 20;
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--line);
+      padding: 10px 12px calc(10px + var(--safeBottom));
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: var(--toolbarH);
+    }
+    .toolbar.hidden { display: none; }
+
+    .toolbar button {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+    .toolbar .primary {
+      border-color: #cfe0ff;
+      background: #eef4ff;
+      color: #1d4ed8;
+    }
+    .toolbar .danger {
+      border-color: #ffd5d5;
+      background: #fff5f5;
+      color: #b91c1c;
+    }
+    .toolbar .grow {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .hint {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .pill {
+      display: inline-block;
+      margin-left: 6px;
+      font-size: 11px;
+      color: #666;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 6px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="topbar-row">
+        <button id="btnBack" class="btn-icon" title="返回">←</button>
+        <div id="topTitle" class="title">经文阅读Lite</div>
+        <button id="btnTopFav" class="btn-icon" title="收藏">★</button>
+      </div>
+      <div id="subTitle" class="sub"></div>
+    </div>
+
+    <main id="content" class="content">
+      <div class="loading">正在加载经文数据…</div>
+    </main>
+
+    <div id="toolbar" class="toolbar hidden">
+      <button id="fontMinus">A-</button>
+      <button id="fontPlus">A+</button>
+      <button id="btnSpeakToggle" class="grow">朗读：开启</button>
+      <button id="btnToolbarFav" class="primary">收藏</button>
+    </div>
+  </div>
+
+  <script>
+    /**********************
+     * 1) 中文书名映射（用于目录显示）
+     **********************/
+    const CN_NAME = {
+      // 旧约
+      gn:'创世记', ex:'出埃及记', lv:'利未记', nm:'民数记', dt:'申命记',
+      js:'约书亚记', jud:'士师记', rt:'路得记', '1sm':'撒母耳记上', '2sm':'撒母耳记下',
+      '1kgs':'列王纪上','2kgs':'列王纪下','1ch':'历代志上','2ch':'历代志下',
+      ezr:'以斯拉记', ne:'尼希米记', et:'以斯帖记', job:'约伯记', ps:'诗篇',
+      prv:'箴言', ec:'传道书', so:'雅歌', is:'以赛亚书', jr:'耶利米书',
+      lm:'耶利米哀歌', ez:'以西结书', dn:'但以理书',
+      ho:'何西阿书', jl:'约珥书', am:'阿摩司书', ob:'俄巴底亚书', jn:'约拿书',
+      mi:'弥迦书', na:'那鸿书', hk:'哈巴谷书', zp:'西番雅书', hg:'哈该书',
+      zc:'撒迦利亚书', ml:'玛拉基书',
+      // 新约（有些数据集约翰福音 abbrev 可能是 jo/jhn/jn；这里先按常见缩写）
+      mt:'马太福音', mk:'马可福音', lk:'路加福音', jo:'约翰福音', jhn:'约翰福音',
+      act:'使徒行传', rm:'罗马书', '1co':'哥林多前书','2co':'哥林多后书',
+      gl:'加拉太书', eph:'以弗所书', ph:'腓立比书', cl:'歌罗西书',
+      '1ts':'帖撒罗尼迦前书','2ts':'帖撒罗尼迦后书',
+      '1tm':'提摩太前书','2tm':'提摩太后书', tt:'提多书', phm:'腓利门书',
+      hb:'希伯来书', jm:'雅各书', '1pe':'彼得前书','2pe':'彼得后书',
+      '1jo':'约翰一书','2jo':'约翰二书','3jo':'约翰三书', jd:'犹大书', re:'启示录', rev:'启示录'
+    };
+
+    /**********************
+     * 2) 配置与状态
+     **********************/
+    const FONT_KEY = 'BIBLE_FONT_SIZE_V1';
+    const FAV_KEY  = 'BIBLE_FAVORITES_V1';
+    const SPEAK_KEY = 'BIBLE_SPEAK_ENABLE_V1';
+
+    const state = {
+      allBooksRaw: [],
+      index: Object.create(null),
+      books: [],
+
+      page: 'loading', // loading | books | chapters | read | favorites | error
+      currentBookId: '',
+      currentBookName: '',
+      currentChapter: 1,
+      highlightVerse: 0,
+
+      fontSize: clamp(parseInt(localStorage.getItem(FONT_KEY) || '20', 10), 14, 36),
+      speakEnabled: (localStorage.getItem(SPEAK_KEY) ?? '1') === '1',
+
+      history: [] // 自定义轻量返回栈
+    };
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function normalizeVerse(v) {
+      return String(v || '').replace(/\s+/g, '');
+    }
+
+    function saveFavoritesMap(map) {
+      localStorage.setItem(FAV_KEY, JSON.stringify(map));
+    }
+
+    function loadFavoritesMap() {
+      try { return JSON.parse(localStorage.getItem(FAV_KEY) || '{}') || {}; }
+      catch (e) { return {}; }
+    }
+
+    function getBook(bookId) {
+      return state.index[bookId];
+    }
+
+    function getChapterVerses(bookId, chapter) {
+      const b = getBook(bookId);
+      if (!b) return [];
+      const ch = parseInt(chapter, 10);
+      if (!Number.isFinite(ch) || ch <= 0) return [];
+      const raw = Array.isArray(b.chapters?.[ch - 1]) ? b.chapters[ch - 1] : [];
+      return raw.map((v, i) => ({
+        verse: i + 1,
+        text: normalizeVerse(v),
+        key: `${bookId}_${ch}_${i + 1}`
+      }));
+    }
+
+    function pushHistory(snapshot) {
+      state.history.push(snapshot);
+    }
+
+    function goBack() {
+      if (!state.history.length) {
+        // 没有历史就返回书卷页
+        state.page = 'books';
+        render();
+        return;
+      }
+      const prev = state.history.pop();
+      Object.assign(state, prev);
+      render();
+    }
+
+    /**********************
+     * 3) 兼容 CommonJS 数据文件（module.exports = [...]）
+     **********************/
+    async function loadCommonJSExport(url) {
+      const resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) throw new Error(`加载失败：${url} (${resp.status})`);
+      const code = await resp.text();
+
+      // 在函数作用域里执行，拿到 module.exports
+      const module = { exports: null };
+      const exports = {};
+      const fn = new Function('module', 'exports', code + '\n;return module.exports;');
+      const result = fn(module, exports);
+      return result ?? module.exports;
+    }
+
+    async function loadAllData() {
+      const [ot, nt] = await Promise.all([
+        loadCommonJSExport('./data/old_testament_data_simplified.js'),
+        loadCommonJSExport('./data/new_testament_data_simplified.js')
+      ]);
+
+      const all = [].concat(Array.isArray(ot) ? ot : [], Array.isArray(nt) ? nt : []);
+      if (!all.length) throw new Error('经文数据为空，请检查 data 文件路径和格式');
+
+      state.allBooksRaw = all;
+      state.index = Object.create(null);
+
+      all.forEach(b => {
+        if (b && b.abbrev) state.index[b.abbrev] = b;
+      });
+
+      state.books = all.map(b => ({
+        id: b.abbrev,
+        name: CN_NAME[b.abbrev] || b.name || b.abbrev,
+        enName: b.name || b.abbrev,
+        chapterCount: Array.isArray(b.chapters) ? b.chapters.length : 0
+      }));
+    }
+
+    /**********************
+     * 4) 朗读（浏览器 TTS）
+     **********************/
+    let currentUtter = null;
+
+    function stopSpeak() {
+      try {
+        window.speechSynthesis?.cancel();
+        currentUtter = null;
+      } catch(e) {}
+    }
+
+    function speakText(text) {
+      if (!state.speakEnabled) return;
+      if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
+        toast('当前浏览器不支持朗读');
+        return;
+      }
+      stopSpeak();
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'zh-CN';
+      utter.rate = 1.0;
+      utter.pitch = 1.0;
+      utter.volume = 1.0;
+
+      // 尝试选择中文音色（如果浏览器提供）
+      const voices = window.speechSynthesis.getVoices?.() || [];
+      const zhVoice = voices.find(v => (v.lang || '').toLowerCase().includes('zh'));
+      if (zhVoice) utter.voice = zhVoice;
+
+      currentUtter = utter;
+      window.speechSynthesis.speak(utter);
+    }
+
+    /**********************
+     * 5) 渲染
+     **********************/
+    const el = {
+      content: document.getElementById('content'),
+      title: document.getElementById('topTitle'),
+      sub: document.getElementById('subTitle'),
+      btnBack: document.getElementById('btnBack'),
+      btnTopFav: document.getElementById('btnTopFav'),
+      toolbar: document.getElementById('toolbar'),
+      fontMinus: document.getElementById('fontMinus'),
+      fontPlus: document.getElementById('fontPlus'),
+      btnSpeakToggle: document.getElementById('btnSpeakToggle'),
+      btnToolbarFav: document.getElementById('btnToolbarFav')
+    };
+
+    function setTitle(title, sub='') {
+      el.title.textContent = title;
+      el.sub.textContent = sub;
+    }
+
+    function render() {
+      el.btnSpeakToggle.textContent = `朗读：${state.speakEnabled ? '开启' : '关闭'}`;
+
+      // 顶部按钮显示逻辑
+      el.btnBack.style.visibility = (state.page === 'books' || state.page === 'loading') ? 'hidden' : 'visible';
+
+      // 底部工具栏只在阅读/收藏页显示
+      const showToolbar = (state.page === 'read' || state.page === 'favorites');
+      el.toolbar.classList.toggle('hidden', !showToolbar);
+
+      if (state.page === 'loading') return renderLoading();
+      if (state.page === 'error') return renderError();
+      if (state.page === 'books') return renderBooks();
+      if (state.page === 'chapters') return renderChapters();
+      if (state.page === 'read') return renderRead();
+      if (state.page === 'favorites') return renderFavorites();
+    }
+
+    function renderLoading() {
+      setTitle('经文阅读Lite', '正在加载数据…');
+      el.content.innerHTML = '<div class="loading">正在加载经文数据，请稍候…</div>';
+    }
+
+    function renderError(msg) {
+      setTitle('加载失败');
+      el.content.innerHTML = `
+        <div class="error">
+          <div style="font-weight:700;margin-bottom:8px;">数据加载失败</div>
+          <div>${escapeHtml(msg || '请检查 data 文件路径')}</div>
+          <div class="hint">确认存在 ./data/old_testament_data_simplified.js 与 ./data/new_testament_data_simplified.js</div>
+        </div>
+      `;
+    }
+
+    function renderBooks() {
+      setTitle('书卷目录', `共 ${state.books.length} 卷`);
+      const html = state.books.map(b => `
+        <div class="card book-item" data-act="open-book" data-book-id="${b.id}">
+          <div class="book-name">${escapeHtml(b.name)}</div>
+          <div class="book-meta">${escapeHtml(b.enName || '')}<span class="pill">${b.chapterCount}章</span></div>
+        </div>
+      `).join('');
+      el.content.innerHTML = `<div class="grid books">${html}</div>`;
+    }
+
+    function renderChapters() {
+      setTitle(state.currentBookName, '请选择章节');
+      const b = getBook(state.currentBookId);
+      const count = Array.isArray(b?.chapters) ? b.chapters.length : 0;
+      if (!count) {
+        el.content.innerHTML = `<div class="empty">未找到章节数据</div>`;
+        return;
+      }
+
+      const items = Array.from({ length: count }, (_, i) => i + 1).map(ch => `
+        <div class="card chapter-item" data-act="open-chapter" data-chapter="${ch}">${ch}</div>
+      `).join('');
+
+      el.content.innerHTML = `<div class="grid chapters">${items}</div>`;
+    }
+
+    function renderRead() {
+      setTitle(`${state.currentBookName} 第 ${state.currentChapter} 章`, '点击经文朗读，点右侧星标收藏');
+
+      const favMap = loadFavoritesMap();
+      const verses = getChapterVerses(state.currentBookId, state.currentChapter);
+
+      if (!verses.length) {
+        el.content.innerHTML = '<div class="empty">该章节暂无数据</div>';
+        return;
+      }
+
+      el.content.innerHTML = `
+        <div class="card" style="padding: 0 12px;">
+          ${verses.map(v => {
+            const isFav = !!favMap[v.key];
+            return `
+              <div class="verse ${isFav ? 'fav' : ''}" id="v_${v.verse}">
+                <div class="verse-main" data-act="speak-verse" data-verse="${v.verse}">
+                  <span class="ref" style="font-size:${state.fontSize}px;">${state.currentChapter}:${v.verse}</span>
+                  <span class="txt" style="font-size:${state.fontSize}px;">${escapeHtml(v.text)}</span>
+                </div>
+                <button class="star ${isFav ? 'on' : ''}" title="${isFav ? '取消收藏' : '收藏'}"
+                        data-act="toggle-fav" data-key="${v.key}" data-verse="${v.verse}">★</button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div class="hint">字体大小会自动保存到本机浏览器（localStorage）</div>
+      `;
+
+      // 如果是从收藏页跳来，滚动到目标节
+      if (state.highlightVerse > 0) {
+        const targetId = `v_${state.highlightVerse}`;
+        requestAnimationFrame(() => {
+          const node = document.getElementById(targetId);
+          if (node) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          state.highlightVerse = 0; // 用完即清
+        });
+      }
+    }
+
+    function renderFavorites() {
+      const favMap = loadFavoritesMap();
+      const items = Object.values(favMap).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+      setTitle('我的收藏', `共 ${items.length} 条`);
+
+      if (!items.length) {
+        el.content.innerHTML = `<div class="empty">还没有收藏经文</div>`;
+        return;
+      }
+
+      el.content.innerHTML = `
+        <div class="fav-list">
+          ${items.map(it => `
+            <div class="card fav-item">
+              <div class="fav-head">
+                <div class="fav-ref">${escapeHtml(it.bookName)} ${it.chapter}:${it.verse}</div>
+                <div style="color:#999;font-size:12px;">${formatTime(it.ts)}</div>
+              </div>
+              <div class="fav-text" data-act="open-fav" data-key="${it.key}">
+                ${escapeHtml(it.text)}
+              </div>
+              <div class="fav-actions">
+                <button class="btn-small" data-act="open-fav" data-key="${it.key}">打开原文</button>
+                <button class="btn-small" data-act="speak-fav" data-key="${it.key}">朗读</button>
+                <button class="btn-small" data-act="remove-fav" data-key="${it.key}">取消收藏</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    /**********************
+     * 6) 事件处理
+     **********************/
+    el.content.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-act]');
+      if (!target) return;
+      const act = target.dataset.act;
+
+      if (act === 'open-book') {
+        const bookId = target.dataset.bookId;
+        const book = state.books.find(x => x.id === bookId);
+        if (!book) return;
+        pushHistory(snapshotState());
+        state.currentBookId = book.id;
+        state.currentBookName = book.name;
+        state.page = 'chapters';
+        render();
+        return;
+      }
+
+      if (act === 'open-chapter') {
+        const chapter = parseInt(target.dataset.chapter, 10);
+        pushHistory(snapshotState());
+        state.currentChapter = chapter;
+        state.page = 'read';
+        state.highlightVerse = 0;
+        stopSpeak();
+        render();
+        return;
+      }
+
+      if (act === 'speak-verse') {
+        const verseNo = parseInt(target.dataset.verse, 10);
+        const verses = getChapterVerses(state.currentBookId, state.currentChapter);
+        const v = verses.find(x => x.verse === verseNo);
+        if (!v) return;
+        speakText(v.text);
+        return;
+      }
+
+      if (act === 'toggle-fav') {
+        const key = target.dataset.key;
+        const verseNo = parseInt(target.dataset.verse, 10);
+        const verses = getChapterVerses(state.currentBookId, state.currentChapter);
+        const v = verses.find(x => x.verse === verseNo);
+        if (!v) return;
+
+        const favMap = loadFavoritesMap();
+        if (favMap[key]) {
+          delete favMap[key];
+          saveFavoritesMap(favMap);
+          toast('已取消收藏');
+        } else {
+          favMap[key] = {
+            key,
+            bookId: state.currentBookId,
+            bookName: state.currentBookName,
+            chapter: state.currentChapter,
+            verse: v.verse,
+            text: v.text,
+            ts: Date.now()
+          };
+          saveFavoritesMap(favMap);
+          toast('已收藏');
+        }
+        renderRead(); // 只刷新阅读区
+        return;
+      }
+
+      if (act === 'open-fav') {
+        const key = target.dataset.key;
+        const favMap = loadFavoritesMap();
+        const item = favMap[key];
+        if (!item) return;
+        pushHistory(snapshotState());
+        state.currentBookId = item.bookId;
+        state.currentBookName = item.bookName;
+        state.currentChapter = parseInt(item.chapter, 10);
+        state.highlightVerse = parseInt(item.verse, 10);
+        state.page = 'read';
+        render();
+        return;
+      }
+
+      if (act === 'remove-fav') {
+        const key = target.dataset.key;
+        const favMap = loadFavoritesMap();
+        if (favMap[key]) {
+          delete favMap[key];
+          saveFavoritesMap(favMap);
+          toast('已取消收藏');
+          renderFavorites();
+        }
+        return;
+      }
+
+      if (act === 'speak-fav') {
+        const key = target.dataset.key;
+        const favMap = loadFavoritesMap();
+        const item = favMap[key];
+        if (!item) return;
+        speakText(item.text);
+        return;
+      }
+    });
+
+    el.btnBack.addEventListener('click', () => {
+      stopSpeak();
+      goBack();
+    });
+
+    el.btnTopFav.addEventListener('click', () => {
+      pushHistory(snapshotState());
+      state.page = 'favorites';
+      render();
+    });
+
+    el.btnToolbarFav.addEventListener('click', () => {
+      pushHistory(snapshotState());
+      state.page = 'favorites';
+      render();
+    });
+
+    el.fontMinus.addEventListener('click', () => {
+      state.fontSize = clamp(state.fontSize - 1, 14, 36);
+      localStorage.setItem(FONT_KEY, String(state.fontSize));
+      if (state.page === 'read') renderRead();
+    });
+
+    el.fontPlus.addEventListener('click', () => {
+      state.fontSize = clamp(state.fontSize + 1, 14, 36);
+      localStorage.setItem(FONT_KEY, String(state.fontSize));
+      if (state.page === 'read') renderRead();
+    });
+
+    el.btnSpeakToggle.addEventListener('click', () => {
+      state.speakEnabled = !state.speakEnabled;
+      localStorage.setItem(SPEAK_KEY, state.speakEnabled ? '1' : '0');
+      if (!state.speakEnabled) stopSpeak();
+      el.btnSpeakToggle.textContent = `朗读：${state.speakEnabled ? '开启' : '关闭'}`;
+      toast(`朗读已${state.speakEnabled ? '开启' : '关闭'}`);
+    });
+
+    // 浏览器语音列表有时异步加载
+    if ('speechSynthesis' in window && typeof speechSynthesis.onvoiceschanged !== 'undefined') {
+      speechSynthesis.onvoiceschanged = () => {};
+    }
+
+    /**********************
+     * 7) 工具函数
+     **********************/
+    function snapshotState() {
+      return {
+        page: state.page,
+        currentBookId: state.currentBookId,
+        currentBookName: state.currentBookName,
+        currentChapter: state.currentChapter,
+        highlightVerse: state.highlightVerse
+      };
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${y}-${m}-${day} ${hh}:${mm}`;
+    }
+
+    let toastTimer = null;
+    function toast(msg) {
+      clearTimeout(toastTimer);
+      el.sub.textContent = msg;
+      toastTimer = setTimeout(() => {
+        // 恢复副标题
+        if (state.page === 'read') {
+          el.sub.textContent = '点击经文朗读，点右侧星标收藏';
+        } else if (state.page === 'chapters') {
+          el.sub.textContent = '请选择章节';
+        } else if (state.page === 'favorites') {
+          const favCount = Object.keys(loadFavoritesMap()).length;
+          el.sub.textContent = `共 ${favCount} 条`;
+        } else if (state.page === 'books') {
+          el.sub.textContent = `共 ${state.books.length} 卷`;
+        }
+      }, 1500);
+    }
+
+    /**********************
+     * 8) 启动
+     **********************/
+    (async function init() {
+      try {
+        state.page = 'loading';
+        render();
+
+        await loadAllData();
+
+        state.page = 'books';
+        render();
+      } catch (err) {
+        console.error(err);
+        state.page = 'error';
+        renderError(err?.message || String(err));
+      }
+    })();
+  </script>
+</body>
+</html>
