@@ -1,560 +1,1017 @@
 <!doctype html>
+
 <html lang="zh-CN">
+
 <head>
+
   <meta charset="UTF-8" />
+
   <meta
+
     name="viewport"
+
     content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+
   />
-  <title>微读圣经Lite Web（JSON + 增强TTS）</title>
+
+  <title>微读圣经Lite Web</title>
+
   <style>
+
     :root {
+
       --bg: #f7f7f7;
+
       --card: #ffffff;
+
       --text: #222;
+
       --sub: #666;
+
       --line: #ececec;
+
       --primary: #2b6cb0;
+
       --primary-soft: #e8f1ff;
+
       --danger: #e53e3e;
+
       --shadow: 0 6px 18px rgba(0,0,0,0.06);
+
       --radius: 14px;
-      --font-size: 22px;
+
+      --font-size: 22px; /* 阅读字体，JS会覆盖 */
+
       --header-h: 56px;
+
       --toolbar-h: 64px;
+
       --safe-top: env(safe-area-inset-top, 0px);
+
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+
     }
+
+
 
     * { box-sizing: border-box; }
+
     html, body {
+
       margin: 0;
+
       padding: 0;
+
       background: var(--bg);
+
       color: var(--text);
+
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+
                    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
       height: 100%;
+
       overflow: hidden;
+
     }
+
+
 
     #app {
+
       height: 100vh;
+
       height: 100dvh;
+
       display: flex;
+
       flex-direction: column;
+
     }
+
+
 
     .topbar {
+
       position: sticky;
+
       top: 0;
+
       z-index: 20;
+
       background: rgba(247,247,247,0.92);
+
       backdrop-filter: blur(10px);
+
       border-bottom: 1px solid var(--line);
+
       padding-top: var(--safe-top);
+
     }
+
     .topbar-inner {
+
       height: var(--header-h);
+
       display: grid;
+
       grid-template-columns: 56px 1fr 56px;
+
       align-items: center;
+
       gap: 4px;
+
       padding: 0 6px;
+
     }
+
     .icon-btn {
+
       height: 40px;
+
       width: 40px;
+
       border: none;
+
       border-radius: 10px;
+
       background: transparent;
+
       font-size: 20px;
+
       cursor: pointer;
+
       color: var(--text);
+
       justify-self: center;
+
     }
+
     .icon-btn:active { background: #eee; }
 
+
+
     .title {
+
       text-align: center;
+
       font-weight: 700;
+
       font-size: 18px;
+
       white-space: nowrap;
+
       overflow: hidden;
+
       text-overflow: ellipsis;
+
     }
 
+
+
     .main {
+
       flex: 1;
+
       overflow: auto;
+
       -webkit-overflow-scrolling: touch;
+
       padding: 12px 12px calc(var(--toolbar-h) + var(--safe-bottom) + 12px);
+
     }
+
+
 
     .hidden { display: none !important; }
 
+
+
     .panel-card {
+
       background: var(--card);
+
       border-radius: var(--radius);
+
       box-shadow: var(--shadow);
+
       padding: 12px;
+
       border: 1px solid #f2f2f2;
+
     }
+
+
 
     .section-title {
+
       margin: 8px 0 12px;
+
       font-size: 16px;
+
       color: var(--sub);
+
       text-align: center;
+
     }
+
+
+
+    /* 书卷列表 */
 
     .book-grid {
+
       display: grid;
+
       grid-template-columns: repeat(2, minmax(0, 1fr));
+
       gap: 10px;
+
     }
+
     .book-item {
+
       border: 1px solid var(--line);
+
       background: #fff;
+
       border-radius: 12px;
+
       padding: 14px 8px;
+
       text-align: center;
+
       cursor: pointer;
+
       font-size: 15px;
+
       line-height: 1.3;
+
       box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+
       user-select: none;
+
     }
+
     .book-item:active {
+
       transform: scale(0.98);
+
       background: #fafafa;
+
     }
+
     .book-item small {
+
       display: block;
+
       color: var(--sub);
+
       margin-top: 4px;
+
       font-size: 12px;
+
     }
+
+
+
+    /* 章节列表 */
 
     .chapter-grid {
+
       display: grid;
+
       grid-template-columns: repeat(5, minmax(0, 1fr));
+
       gap: 10px;
+
     }
+
     .chapter-item {
+
       height: 46px;
+
       display: flex;
+
       align-items: center;
+
       justify-content: center;
+
       border-radius: 10px;
+
       background: var(--primary-soft);
+
       border: 1px solid #dbeafe;
+
       font-weight: 700;
+
       cursor: pointer;
+
       user-select: none;
+
     }
+
     .chapter-item:active { transform: scale(0.97); }
 
+
+
+    /* 阅读页 */
+
     .reader-wrap {
+
       display: flex;
+
       flex-direction: column;
+
       gap: 10px;
+
     }
+
     .reader-head {
+
       background: #fff;
+
       border-radius: 14px;
+
       padding: 10px 12px;
+
       border: 1px solid var(--line);
+
       box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+
       text-align: center;
+
       font-weight: 700;
+
       font-size: 20px;
+
       line-height: 1.4;
+
     }
+
     .reader-sub {
+
       margin-top: 4px;
+
       font-weight: 500;
+
       font-size: 12px;
+
       color: var(--sub);
+
     }
+
+
 
     .verses {
+
       background: #fff;
+
       border-radius: 14px;
+
       border: 1px solid var(--line);
+
       overflow: hidden;
+
     }
+
     .verse-row {
+
       display: grid;
+
       grid-template-columns: 1fr 42px;
+
       gap: 8px;
+
       align-items: start;
+
       padding: 14px 10px 14px 12px;
+
       border-bottom: 1px solid #f1f1f1;
+
       cursor: pointer;
+
       user-select: none;
+
     }
+
     .verse-row:last-child { border-bottom: none; }
+
     .verse-row:active { background: #fafafa; }
+
     .verse-row.speaking {
+
       background: #f8fbff;
+
       box-shadow: inset 3px 0 0 var(--primary);
+
     }
+
+
 
     .verse-text {
+
       font-size: var(--font-size);
+
       line-height: 1.8;
+
       word-break: break-word;
+
       color: #2d2d2d;
+
     }
+
     .verse-no {
+
       font-weight: 700;
+
       color: #111;
+
       margin-right: 6px;
+
     }
+
+
 
     .star-btn {
+
       height: 32px;
+
       width: 32px;
+
       border: none;
+
       background: transparent;
+
       border-radius: 8px;
+
       font-size: 22px;
+
       line-height: 1;
+
       cursor: pointer;
+
       color: #aaa;
+
       padding: 0;
+
       margin-top: 2px;
+
       justify-self: center;
+
     }
-    .star-btn.active { color: #f5a623; }
+
+    .star-btn.active {
+
+      color: #f5a623;
+
+    }
+
     .star-btn:active {
+
       background: #f3f3f3;
+
       transform: scale(0.95);
+
     }
+
+
+
+    /* 底部工具栏 */
 
     .toolbar {
+
       position: sticky;
+
       bottom: 0;
+
       z-index: 15;
+
       margin-top: -4px;
+
       padding: 8px 12px calc(8px + var(--safe-bottom));
+
       background: linear-gradient(to top, rgba(247,247,247,0.98), rgba(247,247,247,0.88));
+
       backdrop-filter: blur(10px);
+
       border-top: 1px solid var(--line);
+
       display: flex;
+
       gap: 8px;
+
       align-items: center;
+
       justify-content: space-between;
+
     }
+
     .toolbar .btn {
+
       flex: 1;
+
       min-height: 42px;
+
       border: 1px solid var(--line);
+
       background: #fff;
+
       border-radius: 12px;
+
       font-size: 15px;
+
       font-weight: 600;
+
       cursor: pointer;
+
       color: #222;
+
     }
+
     .toolbar .btn:active { transform: scale(0.98); background: #fafafa; }
+
     .toolbar .btn.primary {
+
       background: var(--primary-soft);
+
       border-color: #dbeafe;
+
       color: var(--primary);
+
     }
-    .toolbar .btn.warn { color: var(--danger); }
+
+    .toolbar .btn.warn {
+
+      color: var(--danger);
+
+    }
+
+
 
     .toolbar .font-indicator {
+
       min-width: 72px;
+
       text-align: center;
+
       color: var(--sub);
+
       font-size: 12px;
+
       line-height: 1.2;
+
     }
+
+
 
     .empty {
+
       text-align: center;
+
       color: var(--sub);
+
       padding: 28px 12px;
+
       background: #fff;
+
       border-radius: 14px;
+
       border: 1px solid var(--line);
+
     }
+
+
 
     .tips {
+
       font-size: 12px;
+
       color: var(--sub);
+
       margin: 8px 4px 0;
+
       text-align: center;
+
       line-height: 1.5;
+
     }
+
+
 
     .toast {
+
       position: fixed;
+
       left: 50%;
+
       bottom: calc(80px + var(--safe-bottom));
+
       transform: translateX(-50%);
+
       background: rgba(0,0,0,0.82);
+
       color: #fff;
+
       border-radius: 999px;
+
       padding: 8px 14px;
+
       font-size: 13px;
+
       z-index: 50;
+
       opacity: 0;
+
       pointer-events: none;
+
       transition: opacity 0.2s;
+
       max-width: calc(100vw - 24px);
+
       text-align: center;
+
       line-height: 1.4;
+
     }
+
     .toast.show { opacity: 1; }
 
+
+
     .loading {
+
       padding: 24px;
+
       text-align: center;
+
       color: var(--sub);
+
     }
+
+
 
     .badge {
+
       display: inline-block;
+
       font-size: 11px;
+
       color: var(--sub);
+
       background: #f3f4f6;
+
       border-radius: 999px;
+
       padding: 3px 8px;
+
       margin-left: 6px;
+
       vertical-align: middle;
+
     }
+
+
 
     @media (min-width: 768px) {
+
       body { background: #eceff3; }
+
       #app {
+
         max-width: 560px;
+
         margin: 0 auto;
+
         box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+
         background: var(--bg);
+
       }
+
     }
+
   </style>
+
 </head>
+
 <body>
+
   <div id="app">
+
+    <!-- 顶部栏 -->
+
     <div class="topbar">
+
       <div class="topbar-inner">
+
         <button id="btnBack" class="icon-btn" aria-label="返回">‹</button>
+
         <div id="topTitle" class="title">微读圣经Lite Web</div>
+
         <button id="btnHome" class="icon-btn" aria-label="首页">⌂</button>
+
       </div>
+
     </div>
 
+
+
+    <!-- 主内容 -->
+
     <div id="main" class="main">
-      <div id="viewLoading" class="loading">正在加载圣经数据</div>
+
+      <!-- 加载中 -->
+
+      <div id="viewLoading" class="loading">正在加载圣经数据…</div>
+
+
+
+      <!-- 书卷页 -->
 
       <div id="viewBooks" class="hidden">
+
         <div class="panel-card">
+
           <div class="section-title">请选择书卷</div>
+
           <div id="bookGrid" class="book-grid"></div>
+
         </div>
+
       </div>
+
+
+
+      <!-- 章节页 -->
 
       <div id="viewChapters" class="hidden">
+
         <div class="panel-card">
+
           <div id="chaptersTitle" class="section-title">选择章节</div>
+
           <div id="chapterGrid" class="chapter-grid"></div>
+
         </div>
+
       </div>
 
+
+
+      <!-- 阅读页 -->
+
       <div id="viewReader" class="hidden reader-wrap">
+
         <div class="reader-head">
+
           <div id="readerTitle">创世记 第 1 章</div>
+
           <div class="reader-sub">点击经文可朗读；点右侧星标可收藏/取消收藏</div>
+
         </div>
+
+
 
         <div id="verseContainer" class="verses"></div>
 
+
+
         <div class="tips" id="ttsTip">
-          若点击经文无声音：请优先使用系统浏览器打开；部分 App 内置浏览器不支持网页TTS。
+
+          若点击经文后无声音，请尝试使用系统浏览器（非 App 内置页）打开。
+
         </div>
+
       </div>
+
+
+
+      <!-- 收藏夹页 -->
 
       <div id="viewFavorites" class="hidden">
+
         <div class="panel-card">
+
           <div class="section-title">
+
             收藏夹 <span id="favCountBadge" class="badge">0 条</span>
+
           </div>
+
           <div id="favoriteList"></div>
+
         </div>
+
       </div>
+
     </div>
 
+
+
+    <!-- 底部工具栏（仅阅读页显示） -->
+
     <div id="toolbar" class="toolbar hidden">
+
       <button id="btnFontMinus" class="btn" type="button">字体-</button>
+
       <div id="fontIndicator" class="font-indicator">22px</div>
+
       <button id="btnFontPlus" class="btn" type="button">字体+</button>
+
       <button id="btnFavorites" class="btn primary" type="button">收藏夹</button>
+
       <button id="btnStopSpeak" class="btn warn" type="button">停止朗读</button>
+
     </div>
+
   </div>
+
+
 
   <div id="toast" class="toast"></div>
 
+
+
   <script>
+
     /***********************
+
      * 1) 工具函数
+
      ***********************/
+
     const $ = (id) => document.getElementById(id);
+
     const STORAGE_KEYS = {
+
       fontSize: 'bible_font_size_px',
+
       favorites: 'bible_favorites_v1'
+
     };
 
-    // ===== 可选：远程TTS音频回退（默认关闭）=====
-    // 如果你后续有服务端TTS接口，把 enabled 改为 true，并返回可播放音频URL
-    const AUDIO_TTS_CONFIG = {
-      enabled: false,
-      // 返回字符串URL，例如: /api/tts?text=xxx
-      buildUrl(text) {
-        return '/api/tts?text=' + encodeURIComponent(text);
-      }
-    };
+
 
     function showToast(msg, ms = 1800) {
+
       const el = $('toast');
+
       el.textContent = msg;
+
       el.classList.add('show');
+
       clearTimeout(showToast._timer);
+
       showToast._timer = setTimeout(() => el.classList.remove('show'), ms);
+
     }
 
-    function safeParse(str, fallback) {
-      try { return .parse(str); } catch (e) { return fallback; }
+
+
+    function safeJSONParse(str, fallback) {
+
+      try { return JSON.parse(str); } catch (e) { return fallback; }
+
     }
+
+
 
     function normalizeVerseText(v) {
-      // 去掉多余空白（你的里经文有较多全角空格风格分隔）
+
       return String(v || '').replace(/\s+/g, '');
+
     }
 
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
 
-    async function loadArray(url) {
-      const res = await fetch(url, { cache: 'force-cache' });
+
+    // 兼容你的 data/*.js 是 CommonJS: module.exports = [...]
+
+    async function loadCommonJSArray(url) {
+
+      const res = await fetch(url, { cache: 'no-store' });
+
       if (!res.ok) throw new Error(`加载失败: ${url}`);
-      const data = await res.();
-      if (!Array.isArray(data)) {
-        throw new Error(`数据格式错误（不是数组）: ${url}`);
+
+      const txt = await res.text();
+
+
+
+      // 允许末尾有分号
+
+      const m = txt.match(/module\.exports\s*=\s*([\s\S]*?)\s*;?\s*$/);
+
+      if (!m) {
+
+        throw new Error(`无法解析数据文件（未找到 module.exports）: ${url}`);
+
       }
-      return data;
+
+      // 这里只用于你本地受信任的数据文件
+
+      const arr = (new Function(`return (${m[1]});`))();
+
+      if (!Array.isArray(arr)) {
+
+        throw new Error(`数据格式错误（不是数组）: ${url}`);
+
+      }
+
+      return arr;
+
     }
 
-    function isLikelyIOS() {
-      const ua = navigator.userAgent || '';
-      return /iPhone|iPad|iPod/i.test(ua);
-    }
 
-    function isLikelyInAppBrowser() {
-      const ua = navigator.userAgent || '';
-      return /MicroMessenger|QQ\/|Weibo|AliApp|DingTalk/i.test(ua);
-    }
 
     /***********************
-     * 2) 书卷名称映射
+
+     * 2) 书卷名称映射（英文 abbrev -> 中文）
+
+     *    你的数据里 name 多数是英文，这里统一显示中文
+
      ***********************/
-   const BOOK_NAME_CN_BY_NAME = {
-  'Genesis':'创世记',
-  'Exodus':'出埃及记',
-  'Leviticus':'利未记',
-  'Numbers':'民数记',
-  'Deuteronomy':'申命记',
-  'Joshua':'约书亚记',
-  'Judges':'士师记',
-  'Ruth':'路得记',
-  '1 Samuel':'撒母耳记上',
-  '2 Samuel':'撒母耳记下',
-  '1 Kings':'列王纪上',
-  '2 Kings':'列王纪下',
-  '1 Chronicles':'历代志上',
-  '2 Chronicles':'历代志下',
-  'Ezra':'以斯拉记',
-  'Nehemiah':'尼希米记',
-  'Esther':'以斯帖记',
-  'Job':'约伯记',
-  'Psalms':'诗篇',
-  'Psalm':'诗篇',
-  'Proverbs':'箴言',
-  'Ecclesiastes':'传道书',
-  'Song of Solomon':'雅歌',
-  'Song of Songs':'雅歌',
-  'Isaiah':'以赛亚书',
-  'Jeremiah':'耶利米书',
-  'Lamentations':'耶利米哀歌',
-  'Ezekiel':'以西结书',
-  'Daniel':'但以理书',
-  // ... 新约也补齐
-  'Matthew':'马太福音',
-  'Mark':'马可福音',
-  'Luke':'路加福音',
-  'John':'约翰福音',
-  'Acts':'使徒行传',
-  'Romans':'罗马书',
-  '1 Corinthians':'哥林多前书',
-  '2 Corinthians':'哥林多后书',
-  'Galatians':'加拉太书',
-  'Ephesians':'以弗所书',
-  'Philippians':'腓立比书',
-  'Colossians':'歌罗西书',
-  '1 Thessalonians':'帖撒罗尼迦前书',
-  '2 Thessalonians':'帖撒罗尼迦后书',
-  '1 Timothy':'提摩太前书',
-  '2 Timothy':'提摩太后书',
-  'Titus':'提多书',
-  'Philemon':'腓利门书',
-  'Hebrews':'希伯来书',
-  'James':'雅各书',
-  '1 Peter':'彼得前书',
-  '2 Peter':'彼得后书',
-  '1 John':'约翰一书',
-  '2 John':'约翰二书',
-  '3 John':'约翰三书',
-  'Jude':'犹大书',
-  'Revelation':'启示录'
-};
 
-function getBookDisplayName(book) {
-  const ab = String(book?.abbrev || '').trim().toLowerCase();
-  const en = String(book?.name || '').trim();
+    const BOOK_NAME_CN = {
 
-  return (
-    BOOK_NAME_CN[ab] ||
-    BOOK_NAME_CN_BY_NAME[en] ||
-    en ||
-    ab ||
-    '未知书卷'
-  );
-}
+      gn:'创世记', ex:'出埃及记', lv:'利未记', nm:'民数记', dt:'申命记',
+
+      js:'约书亚记', jg:'士师记', rt:'路得记',
+
+      '1sm':'撒母耳记上', '2sm':'撒母耳记下',
+
+      '1ki':'列王纪上', '2ki':'列王纪下',
+
+      '1ch':'历代志上', '2ch':'历代志下',
+
+      ezr:'以斯拉记', ne:'尼希米记', et:'以斯帖记',
+
+      jb:'约伯记', ps:'诗篇', pr:'箴言', ec:'传道书', so:'雅歌',
+
+      is:'以赛亚书', jr:'耶利米书', lm:'耶利米哀歌', ek:'以西结书', dn:'但以理书',
+
+      hs:'何西阿书', jl:'约珥书', am:'阿摩司书', ob:'俄巴底亚书', jn:'约拿书',
+
+      mi:'弥迦书', na:'那鸿书', hk:'哈巴谷书', zp:'西番雅书', hg:'哈该书',
+
+      zc:'撒迦利亚书', ml:'玛拉基书',
+
+
+
+      mt:'马太福音', mk:'马可福音', lk:'路加福音', jo:'约翰福音',
+
+      ac:'使徒行传', rm:'罗马书',
+
+      '1co':'哥林多前书', '2co':'哥林多后书',
+
+      gl:'加拉太书', ep:'以弗所书', pp:'腓立比书', cl:'歌罗西书',
+
+      '1th':'帖撒罗尼迦前书', '2th':'帖撒罗尼迦后书',
+
+      '1tm':'提摩太前书', '2tm':'提摩太后书',
+
+      tt:'提多书', phm:'腓利门书', hb:'希伯来书', jm:'雅各书',
+
+      '1pe':'彼得前书', '2pe':'彼得后书',
+
+      '1jo':'约翰一书', '2jo':'约翰二书', '3jo':'约翰三书',
+
+      jd:'犹大书', re:'启示录'
+
+    };
+
+
+
+    function getBookDisplayName(book) {
+
+      return BOOK_NAME_CN[book.abbrev] || book.name || book.abbrev;
+
+    }
+
+
 
     /***********************
-     * 3) 数据层（）
+
+     * 3) 数据层
+
      ***********************/
+
     const BibleDB = {
+
       loaded: false,
-      allBooks: [],
-      index: {},
-      bookMeta: [],
+
+      allBooks: [],       // 原始对象数组 [{abbrev,name,chapters:[[]...]}]
+
+      index: {},          // abbrev -> book
+
+      bookMeta: [],       // [{id,name,chapterCount,testament}]
 
       async init() {
+
         if (this.loaded) return;
 
-        // 并行加载 （比 CommonJS + eval 更快更稳）
+
+
         const [OT, NT] = await Promise.all([
 
           loadCommonJSArray('./data/old_testament_data_simplified.js'),
@@ -563,793 +1020,1148 @@ function getBookDisplayName(book) {
 
         ]);
 
+
+
         this.allBooks = [...OT, ...NT];
-        this.index = Object.create(null);
+
+        this.index = {};
 
         this.bookMeta = this.allBooks.map((b, idx) => {
+
           this.index[b.abbrev] = b;
+
           return {
+
             id: b.abbrev,
+
             name: getBookDisplayName(b),
+
             chapterCount: Array.isArray(b.chapters) ? b.chapters.length : 0,
+
             testament: idx < OT.length ? 'old' : 'new'
+
           };
+
         });
+
+
 
         this.loaded = true;
+
       },
+
+
 
       getBooks() {
+
         return this.bookMeta.slice();
+
       },
+
+
 
       getBookMetaById(bookId) {
+
         return this.bookMeta.find(b => b.id === bookId) || null;
+
       },
+
+
 
       getChapterVerses(bookId, chapter) {
+
         const b = this.index[bookId];
+
         if (!b) return [];
+
         const ch = Number(chapter);
+
         if (!Number.isFinite(ch) || ch <= 0) return [];
+
         const raw = (b.chapters && b.chapters[ch - 1]) ? b.chapters[ch - 1] : [];
+
         return raw.map((t, i) => ({
+
           verse: i + 1,
+
           text: normalizeVerseText(t)
+
         }));
+
       }
+
     };
 
+
+
     /***********************
+
      * 4) 收藏（本地存储）
+
      ***********************/
+
     const FavoriteStore = {
+
       _cache: null,
+
       load() {
+
         if (this._cache) return this._cache;
+
         const data = safeJSONParse(localStorage.getItem(STORAGE_KEYS.favorites), []);
+
         this._cache = Array.isArray(data) ? data : [];
+
         return this._cache;
+
       },
+
       save() {
+
         localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(this.load()));
+
       },
+
       keyOf(item) {
+
         return `${item.bookId}|${item.chapter}|${item.verse}`;
+
       },
+
       has(bookId, chapter, verse) {
+
         return this.load().some(it => it.bookId === bookId && it.chapter === Number(chapter) && it.verse === Number(verse));
+
       },
+
       toggle(item) {
+
         const arr = this.load();
+
         const key = this.keyOf(item);
+
         const idx = arr.findIndex(it => this.keyOf(it) === key);
+
         if (idx >= 0) {
+
           arr.splice(idx, 1);
+
           this.save();
+
           return false;
+
         } else {
+
           arr.unshift({
+
             bookId: item.bookId,
+
             bookName: item.bookName,
+
             chapter: Number(item.chapter),
+
             verse: Number(item.verse),
+
             text: item.text,
+
             ts: Date.now()
+
           });
+
           this.save();
+
           return true;
+
         }
+
       },
+
       list() {
+
         return this.load().slice().sort((a, b) => b.ts - a.ts);
+
       },
+
       remove(bookId, chapter, verse) {
+
         const arr = this.load();
+
         const key = `${bookId}|${Number(chapter)}|${Number(verse)}`;
+
         const idx = arr.findIndex(it => `${it.bookId}|${it.chapter}|${it.verse}` === key);
+
         if (idx >= 0) {
+
           arr.splice(idx, 1);
+
           this.save();
+
           return true;
+
         }
+
         return false;
+
       }
+
     };
 
+
+
     /***********************
+
      * 5) 字体设置
+
      ***********************/
+
     const FontSetting = {
+
       min: 16,
+
       max: 36,
+
       step: 2,
+
       get() {
+
         const n = Number(localStorage.getItem(STORAGE_KEYS.fontSize));
+
         return Number.isFinite(n) ? Math.max(this.min, Math.min(this.max, n)) : 22;
+
       },
+
       set(px) {
+
         const v = Math.max(this.min, Math.min(this.max, Number(px)));
+
         localStorage.setItem(STORAGE_KEYS.fontSize, String(v));
+
         document.documentElement.style.setProperty('--font-size', v + 'px');
+
         $('fontIndicator').textContent = v + 'px';
+
         return v;
+
       },
+
       inc() { return this.set(this.get() + this.step); },
+
       dec() { return this.set(this.get() - this.step); }
+
     };
 
+
+
     /***********************
-     * 6) 增强朗读（TTS）
-     *    - voiceschanged + 延迟刷新
-     *    - 用户手势解锁
-     *    - 长文本分块朗读（移动端更稳）
-     *    - 超时兜底
-     *    - 可选音频fallback
+
+     * 6) 朗读（TTS）
+
      ***********************/
+
     const TTS = {
+
       synth: window.speechSynthesis || null,
+
       voices: [],
+
       ready: false,
-      unlocked: false,
+
       currentKey: '',
+
       currentRowEl: null,
-      queue: [],
-      speakingChunk: false,
-      watchdogTimer: null,
-      keepAliveTimer: null,
-      audioEl: null,
-      mode: 'webspeech', // webspeech | audio
+
+
 
       init() {
-        // 预备音频元素（fallback用）
-        this.audioEl = new Audio();
-        this.audioEl.preload = 'none';
-        this.audioEl.addEventListener('ended', () => {
-          this.clearSpeakingStyle();
-          this.currentKey = '';
-        });
-        this.audioEl.addEventListener('error', () => {
-          this.clearSpeakingStyle();
-          this.currentKey = '';
-          showToast('音频朗读失败');
-        });
 
-        if (!this.synth || typeof window.SpeechSynthesisUtterance === 'undefined') {
-          this.ready = false;
-          return;
-        }
+        if (!this.synth) return;
 
         this.refreshVoices();
 
-        // voiceschanged 事件（浏览器支持较广，但移动端表现仍有差异）
+
+
+        // 某些浏览器需异步触发 voiceschanged 后才拿得到语音列表
+
         if ('onvoiceschanged' in this.synth) {
-          this.synth.addEventListener('voiceschanged', () => this.refreshVoices());
+
+          this.synth.addEventListener('voiceschanged', () => {
+
+            this.refreshVoices();
+
+          });
+
         }
 
-        // 多次延迟刷新：兼容移动端语音列表延迟注入
-        [100, 300, 800, 1500, 2500].forEach(ms => {
+
+
+        // 再做几次延迟刷新，兼容移动端延迟注入声音列表
+
+        [200, 800, 1500].forEach(ms => {
+
           setTimeout(() => this.refreshVoices(), ms);
+
         });
+
+
 
         this.ready = true;
+
       },
+
+
 
       refreshVoices() {
-        if (!this.synth || !this.synth.getVoices) return;
+
+        if (!this.synth) return;
+
         try {
-          const list = this.synth.getVoices();
+
+          const list = this.synth.getVoices ? this.synth.getVoices() : [];
+
           if (Array.isArray(list) && list.length) {
+
             this.voices = list;
+
           }
-        } catch (e) {}
-      },
 
-      unlockFromUserGesture() {
-        // 某些移动端需要用户手势后才允许发声
-        this.unlocked = true;
+        } catch (e) {
 
-        // 尝试做一次极短静音/空白朗读“预热”
-        if (this.synth && typeof window.SpeechSynthesisUtterance !== 'undefined') {
-          try {
-            const u = new SpeechSynthesisUtterance(' ');
-            u.volume = 0;
-            u.rate = 1;
-            u.pitch = 1;
-            this.synth.cancel();
-            this.synth.speak(u);
-            // 很快取消，避免误感知
-            setTimeout(() => { try { this.synth.cancel(); } catch(e) {} }, 30);
-          } catch (e) {}
+          // ignore
+
         }
+
       },
+
+
 
       pickVoice() {
+
         if (!this.voices || !this.voices.length) return null;
 
-        // 优先中文（含普通话/cmn）
-        const zh = this.voices.find(v => /^(zh|cmn)(-|_)?/i.test(v.lang || ''));
+        // 优先中文
+
+        const zh = this.voices.find(v => /zh|cmn/i.test(v.lang || ''));
+
         if (zh) return zh;
 
-        // 其次包含中文关键词
-        const zh2 = this.voices.find(v => /zh|cmn/i.test(v.lang || '') || /Chinese|中文|普通话/i.test(v.name || ''));
-        if (zh2) return zh2;
+        // 其次系统默认
 
-        // 再其次默认
         const def = this.voices.find(v => v.default);
+
         return def || this.voices[0] || null;
+
       },
 
-      splitTextForSpeech(text, maxLen = 70) {
-        const s = String(text || '').trim();
-        if (!s) return [];
 
-        // 按中文标点优先分句，再做长度切块（移动端更稳定）
-        const firstPass = s
-          .replace(/([。！？；：])/g, '$1|')
-          .replace(/([，、])/g, '$1|')
-          .split('|')
-          .map(x => x.trim())
-          .filter(Boolean);
-
-        const chunks = [];
-        for (const seg of firstPass) {
-          if (seg.length <= maxLen) {
-            chunks.push(seg);
-          } else {
-            // 超长再按长度切
-            let i = 0;
-            while (i < seg.length) {
-              chunks.push(seg.slice(i, i + maxLen));
-              i += maxLen;
-            }
-          }
-        }
-        return chunks.length ? chunks : [s];
-      },
-
-      clearSpeakingStyle() {
-        if (this.currentRowEl) {
-          this.currentRowEl.classList.remove('speaking');
-          this.currentRowEl = null;
-        }
-      },
-
-      setSpeakingStyle(key, rowEl) {
-        this.currentKey = key || '';
-        this.clearSpeakingStyle();
-        if (rowEl) {
-          this.currentRowEl = rowEl;
-          rowEl.classList.add('speaking');
-        }
-      },
 
       stop() {
-        // 停止 WebSpeech
-        if (this.synth) {
-          try { this.synth.cancel(); } catch (e) {}
-        }
 
-        // 停止 fallback 音频
-        if (this.audioEl) {
-          try {
-            this.audioEl.pause();
-            this.audioEl.currentTime = 0;
-            this.audioEl.removeAttribute('src');
-            this.audioEl.load();
-          } catch (e) {}
-        }
+        if (!this.synth) return;
 
-        this.queue = [];
-        this.speakingChunk = false;
-        clearTimeout(this.watchdogTimer);
-        clearInterval(this.keepAliveTimer);
-        this.watchdogTimer = null;
-        this.keepAliveTimer = null;
+        try { this.synth.cancel(); } catch (e) {}
 
         this.clearSpeakingStyle();
+
         this.currentKey = '';
+
       },
 
-      async speak(text, key, rowEl) {
-        if (!text || !String(text).trim()) return;
 
-        // 每次点击都视为一次用户手势解锁机会
-        this.unlockFromUserGesture();
 
-        // 停掉前一个
+      clearSpeakingStyle() {
+
+        if (this.currentRowEl) {
+
+          this.currentRowEl.classList.remove('speaking');
+
+          this.currentRowEl = null;
+
+        }
+
+      },
+
+
+
+      speak(text, key, rowEl) {
+
+        if (!this.synth || typeof window.SpeechSynthesisUtterance === 'undefined') {
+
+          showToast('当前浏览器不支持网页朗读（可换系统浏览器再试）', 2200);
+
+          return;
+
+        }
+
+        if (!text || !text.trim()) return;
+
+
+
+        // 同一条再次点击：重新读
+
         this.stop();
 
-        this.setSpeakingStyle(key, rowEl);
 
-        // 优先使用 Web Speech；失败再尝试音频fallback（若启用）
-        const ok = await this.speakByWebSpeech(text);
-        if (!ok && AUDIO_TTS_CONFIG.enabled) {
-          await this.speakByAudioFallback(text, key, rowEl);
-        } else if (!ok) {
+
+        const u = new SpeechSynthesisUtterance(text);
+
+        const voice = this.pickVoice();
+
+        if (voice) u.voice = voice;
+
+        u.lang = (voice && voice.lang) ? voice.lang : 'zh-CN';
+
+        u.rate = 1.0;
+
+        u.pitch = 1.0;
+
+        u.volume = 1.0;
+
+
+
+        u.onstart = () => {
+
+          this.currentKey = key || '';
+
           this.clearSpeakingStyle();
-          this.currentKey = '';
-          showToast('当前浏览器/内置页不支持网页朗读，可换系统浏览器或接入音频TTS', 2600);
-        }
-      },
 
-      async speakByAudioFallback(text, key, rowEl) {
-        try {
-          this.mode = 'audio';
-          const url = AUDIO_TTS_CONFIG.buildUrl(text);
-          this.setSpeakingStyle(key, rowEl);
-          this.audioEl.src = url;
-          const p = this.audioEl.play();
-          if (p && typeof p.then === 'function') await p;
-          return true;
-        } catch (e) {
-          return false;
-        }
-      },
+          if (rowEl) {
 
-      async speakByWebSpeech(text) {
-        if (!this.synth || typeof window.SpeechSynthesisUtterance === 'undefined') return false;
+            this.currentRowEl = rowEl;
 
-        // 内置浏览器通常更容易失败，提前给温和提示（不阻止）
-        if (isLikelyInAppBrowser()) {
-          // 不每次都提示
-          if (!this._warnedInApp) {
-            this._warnedInApp = true;
-            showToast('当前可能是App内置浏览器，网页朗读兼容性较差', 2200);
+            rowEl.classList.add('speaking');
+
           }
+
+        };
+
+        u.onend = () => {
+
+          this.clearSpeakingStyle();
+
+          this.currentKey = '';
+
+        };
+
+        u.onerror = () => {
+
+          this.clearSpeakingStyle();
+
+          this.currentKey = '';
+
+          showToast('朗读失败：当前浏览器或环境限制了语音功能', 2400);
+
+        };
+
+
+
+        try {
+
+          this.synth.speak(u);
+
+
+
+          // 某些环境（尤其内置 WebView）调用成功但不发声，给个温和提示
+
+          setTimeout(() => {
+
+            if (!this.synth) return;
+
+            const speaking = this.synth.speaking;
+
+            const pending = this.synth.pending;
+
+            if (!speaking && !pending) {
+
+              // 不一定是失败，但常见于不支持/被限制
+
+              // 不打断用户，只提示一次
+
+              if (!TTS._warnedSilent) {
+
+                TTS._warnedSilent = true;
+
+                showToast('若无声音，请使用系统浏览器打开（微信/QQ内置浏览器常受限）', 2600);
+
+              }
+
+            }
+
+          }, 400);
+
+        } catch (e) {
+
+          showToast('当前环境不支持语音朗读', 2200);
+
         }
 
-        // 刷新语音列表
-        this.refreshVoices();
-        const chunks = this.splitTextForSpeech(text, isLikelyIOS() ? 45 : 70);
-        if (!chunks.length) return false;
-
-        this.queue = chunks.slice();
-        this.mode = 'webspeech';
-
-        // iOS/Safari 某些场景会暂停，需要轻微 keepAlive
-        this.keepAliveTimer = setInterval(() => {
-          try {
-            if (this.synth && this.synth.speaking && this.synth.paused) {
-              this.synth.resume();
-            }
-          } catch (e) {}
-        }, 1000);
-
-        const startAt = Date.now();
-
-        return new Promise((resolve) => {
-          let resolved = false;
-          const finish = (ok) => {
-            if (resolved) return;
-            resolved = true;
-            clearTimeout(this.watchdogTimer);
-            clearInterval(this.keepAliveTimer);
-            this.watchdogTimer = null;
-            this.keepAliveTimer = null;
-            this.speakingChunk = false;
-            if (!ok) {
-              try { this.synth.cancel(); } catch (e) {}
-            }
-            resolve(!!ok);
-          };
-
-          const speakNext = () => {
-            if (!this.queue.length) {
-              this.clearSpeakingStyle();
-              this.currentKey = '';
-              finish(true);
-              return;
-            }
-
-            const piece = this.queue.shift();
-            const u = new SpeechSynthesisUtterance(piece);
-            const voice = this.pickVoice();
-            if (voice) u.voice = voice;
-            u.lang = (voice && voice.lang) ? voice.lang : 'zh-CN';
-            u.rate = 1.0;
-            u.pitch = 1.0;
-            u.volume = 1.0;
-
-            let ended = false;
-
-            u.onstart = () => {
-              this.speakingChunk = true;
-              // 单块超时兜底（防假死）
-              clearTimeout(this.watchdogTimer);
-              this.watchdogTimer = setTimeout(() => {
-                if (!ended) {
-                  try { this.synth.cancel(); } catch (e) {}
-                  finish(false);
-                }
-              }, 12000);
-            };
-
-            u.onend = () => {
-              ended = true;
-              this.speakingChunk = false;
-              clearTimeout(this.watchdogTimer);
-              // 下一块衔接稍微延迟，更稳
-              setTimeout(speakNext, 20);
-            };
-
-            u.onerror = () => {
-              ended = true;
-              this.speakingChunk = false;
-              clearTimeout(this.watchdogTimer);
-              finish(false);
-            };
-
-            try {
-              this.synth.speak(u);
-
-              // 首块快速探测：有些环境调用不报错但根本不播
-              if (Date.now() - startAt < 1000) {
-                setTimeout(() => {
-                  try {
-                    if (!this.synth.speaking && !this.synth.pending && !ended) {
-                      finish(false);
-                    }
-                  } catch (e) {}
-                }, 500);
-              }
-            } catch (e) {
-              finish(false);
-            }
-          };
-
-          speakNext();
-        });
       }
+
     };
 
+
+
     /***********************
-     * 7) 应用状态 + 路由
+
+     * 7) 应用状态 + 路由（简易 SPA）
+
      ***********************/
+
     const AppState = {
-      view: 'loading',
+
+      view: 'loading', // loading | books | chapters | reader | favorites
+
       currentBookId: '',
+
       currentBookName: '',
+
       currentChapter: 1,
+
       history: [],
 
+
+
       push(viewName) {
+
         if (this.view && this.view !== 'loading') this.history.push(this.view);
+
         this.view = viewName;
+
         render();
+
       },
+
+
 
       go(viewName) {
+
         this.view = viewName;
+
         render();
+
       },
 
+
+
       back() {
-        if (this.view === 'reader') TTS.stop();
-        if (!this.history.length) {
-          this.go('books');
-          return;
+
+        if (this.view === 'reader') {
+
+          TTS.stop();
+
         }
+
+        if (!this.history.length) {
+
+          this.go('books');
+
+          return;
+
+        }
+
         this.view = this.history.pop();
+
         render();
+
       }
+
     };
 
+
+
     /***********************
+
      * 8) 渲染
+
      ***********************/
+
     function setTopTitle(text) {
+
       $('topTitle').textContent = text || '微读圣经Lite Web';
+
     }
+
+
 
     function showOnly(viewId) {
+
       ['viewLoading', 'viewBooks', 'viewChapters', 'viewReader', 'viewFavorites'].forEach(id => {
+
         $(id).classList.add('hidden');
+
       });
+
       $(viewId).classList.remove('hidden');
+
     }
+
+
 
     function renderBooks() {
+
       const books = BibleDB.getBooks();
+
       const grid = $('bookGrid');
+
       grid.innerHTML = '';
 
-      const frag = document.createDocumentFragment();
+
+
       books.forEach(book => {
+
         const el = document.createElement('div');
+
         el.className = 'book-item';
+
         el.innerHTML = `
-          <div>${escapeHtml(book.name)}</div>
+
+          <div>${book.name}</div>
+
           <small>${book.chapterCount} 章</small>
+
         `;
+
         el.addEventListener('click', () => {
+
           AppState.currentBookId = book.id;
+
           AppState.currentBookName = book.name;
+
           renderChapters();
+
           AppState.push('chapters');
+
           $('main').scrollTop = 0;
+
         });
-        frag.appendChild(el);
+
+        grid.appendChild(el);
+
       });
-      grid.appendChild(frag);
+
     }
+
+
 
     function renderChapters() {
+
       $('chaptersTitle').textContent = `${AppState.currentBookName} · 选择章节`;
+
       const meta = BibleDB.getBookMetaById(AppState.currentBookId);
+
       const count = meta ? meta.chapterCount : 0;
+
       const grid = $('chapterGrid');
+
       grid.innerHTML = '';
 
-      const frag = document.createDocumentFragment();
+
+
       for (let i = 1; i <= count; i++) {
+
         const el = document.createElement('div');
+
         el.className = 'chapter-item';
+
         el.textContent = i;
+
         el.addEventListener('click', () => {
+
           AppState.currentChapter = i;
+
           renderReader();
+
           AppState.push('reader');
+
           $('main').scrollTop = 0;
+
         });
-        frag.appendChild(el);
+
+        grid.appendChild(el);
+
       }
-      grid.appendChild(frag);
+
     }
 
+
+
     function renderReader() {
+
       const bookId = AppState.currentBookId;
+
       const bookName = AppState.currentBookName;
+
       const chapter = AppState.currentChapter;
+
       const verses = BibleDB.getChapterVerses(bookId, chapter);
+
+
 
       $('readerTitle').textContent = `${bookName} 第 ${chapter} 章`;
 
+
+
       const box = $('verseContainer');
+
       box.innerHTML = '';
 
+
+
       if (!verses.length) {
+
         box.innerHTML = `<div class="empty">该章节暂无数据</div>`;
+
         return;
+
       }
 
-      const frag = document.createDocumentFragment();
+
 
       verses.forEach(v => {
+
         const row = document.createElement('div');
+
         row.className = 'verse-row';
+
         const fav = FavoriteStore.has(bookId, chapter, v.verse);
 
+
+
         row.innerHTML = `
+
           <div class="verse-text">
+
             <span class="verse-no">${chapter}:${v.verse}</span>${escapeHtml(v.text)}
+
           </div>
+
           <button class="star-btn ${fav ? 'active' : ''}" type="button" aria-label="收藏">
+
             ${fav ? '★' : '☆'}
+
           </button>
+
         `;
 
-        row.addEventListener('click', async () => {
-          const speakText = `${bookName} 第${chapter}章，第${v.verse}节。${v.text}`;
-          const key = `${bookId}|${chapter}|${v.verse}`;
-          await TTS.speak(speakText, key, row);
-        });
 
-        const starBtn = row.querySelector('.star-btn');
-        starBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const nowFav = FavoriteStore.toggle({
-            bookId, bookName, chapter, verse: v.verse, text: v.text
-          });
-          starBtn.classList.toggle('active', nowFav);
-          starBtn.textContent = nowFav ? '★' : '☆';
-          showToast(nowFav ? '已收藏' : '已取消收藏');
-          if (AppState.view === 'favorites') renderFavorites();
-        });
 
-        frag.appendChild(row);
-      });
-
-      box.appendChild(frag);
-    }
-
-    function renderFavorites() {
-      const list = FavoriteStore.list();
-      $('favCountBadge').textContent = `${list.length} 条`;
-      const container = $('favoriteList');
-      container.innerHTML = '';
-
-      if (!list.length) {
-        container.innerHTML = `<div class="empty">暂无收藏内容</div>`;
-        return;
-      }
-
-      const frag = document.createDocumentFragment();
-
-      list.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'verse-row';
-        row.innerHTML = `
-          <div class="verse-text">
-            <span class="verse-no">${escapeHtml(item.bookName)} ${item.chapter}:${item.verse}</span>
-            ${escapeHtml(item.text)}
-          </div>
-          <button class="star-btn active" type="button" aria-label="取消收藏">★</button>
-        `;
+        // 点击经文 -> 朗读
 
         row.addEventListener('click', () => {
-          AppState.currentBookId = item.bookId;
-          AppState.currentBookName = item.bookName;
-          AppState.currentChapter = item.chapter;
-          renderReader();
-          AppState.push('reader');
-          $('main').scrollTop = 0;
 
-          requestAnimationFrame(() => {
-            const rows = Array.from(document.querySelectorAll('#verseContainer .verse-row'));
-            const target = rows[item.verse - 1];
-            if (target) {
-              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              setTimeout(async () => {
-                const speakText = `${item.bookName} 第${item.chapter}章，第${item.verse}节。${item.text}`;
-                await TTS.speak(speakText, `${item.bookId}|${item.chapter}|${item.verse}`, target);
-              }, 350);
-            }
-          });
+          const speakText = `${bookName} 第${chapter}章，第${v.verse}节。${v.text}`;
+
+          const key = `${bookId}|${chapter}|${v.verse}`;
+
+          TTS.speak(speakText, key, row);
+
         });
 
-        row.querySelector('.star-btn').addEventListener('click', (e) => {
+
+
+        // 点击星标 -> 收藏/取消收藏（阻止触发朗读）
+
+        const starBtn = row.querySelector('.star-btn');
+
+        starBtn.addEventListener('click', (e) => {
+
           e.stopPropagation();
-          FavoriteStore.remove(item.bookId, item.chapter, item.verse);
-          renderFavorites();
-          showToast('已取消收藏');
+
+          const nowFav = FavoriteStore.toggle({
+
+            bookId,
+
+            bookName,
+
+            chapter,
+
+            verse: v.verse,
+
+            text: v.text
+
+          });
+
+
+
+          starBtn.classList.toggle('active', nowFav);
+
+          starBtn.textContent = nowFav ? '★' : '☆';
+
+          showToast(nowFav ? '已收藏' : '已取消收藏');
+
+
+
+          // 如果当前正显示收藏夹，顺便刷新
+
+          if (AppState.view === 'favorites') renderFavorites();
+
         });
 
-        frag.appendChild(row);
+
+
+        box.appendChild(row);
+
       });
 
-      container.appendChild(frag);
     }
+
+
+
+    function renderFavorites() {
+
+      const list = FavoriteStore.list();
+
+      $('favCountBadge').textContent = `${list.length} 条`;
+
+      const container = $('favoriteList');
+
+      container.innerHTML = '';
+
+
+
+      if (!list.length) {
+
+        container.innerHTML = `<div class="empty">暂无收藏内容</div>`;
+
+        return;
+
+      }
+
+
+
+      list.forEach(item => {
+
+        const row = document.createElement('div');
+
+        row.className = 'verse-row';
+
+        row.innerHTML = `
+
+          <div class="verse-text">
+
+            <span class="verse-no">${escapeHtml(item.bookName)} ${item.chapter}:${item.verse}</span>
+
+            ${escapeHtml(item.text)}
+
+          </div>
+
+          <button class="star-btn active" type="button" aria-label="取消收藏">★</button>
+
+        `;
+
+
+
+        // 点击收藏项 -> 跳转到对应章节并朗读
+
+        row.addEventListener('click', () => {
+
+          AppState.currentBookId = item.bookId;
+
+          AppState.currentBookName = item.bookName;
+
+          AppState.currentChapter = item.chapter;
+
+          renderReader();
+
+          AppState.push('reader');
+
+          $('main').scrollTop = 0;
+
+
+
+          // 滚动定位到该节（下一帧）
+
+          requestAnimationFrame(() => {
+
+            const selector = `.verse-row`;
+
+            const rows = Array.from(document.querySelectorAll('#verseContainer ' + selector));
+
+            const target = rows[item.verse - 1];
+
+            if (target) {
+
+              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+              setTimeout(() => {
+
+                const speakText = `${item.bookName} 第${item.chapter}章，第${item.verse}节。${item.text}`;
+
+                TTS.speak(speakText, `${item.bookId}|${item.chapter}|${item.verse}`, target);
+
+              }, 350);
+
+            }
+
+          });
+
+        });
+
+
+
+        // 取消收藏
+
+        row.querySelector('.star-btn').addEventListener('click', (e) => {
+
+          e.stopPropagation();
+
+          FavoriteStore.remove(item.bookId, item.chapter, item.verse);
+
+          renderFavorites();
+
+          showToast('已取消收藏');
+
+        });
+
+
+
+        container.appendChild(row);
+
+      });
+
+    }
+
+
 
     function render() {
+
+      // 顶部按钮显隐逻辑
+
       $('btnBack').style.visibility = (AppState.view === 'books' || AppState.view === 'loading') ? 'hidden' : 'visible';
+
+
+
+      // 工具栏只在阅读页显示
+
       $('toolbar').classList.toggle('hidden', AppState.view !== 'reader');
 
+
+
       if (AppState.view === 'loading') {
+
         setTopTitle('微读圣经Lite Web');
+
         showOnly('viewLoading');
+
         return;
+
       }
+
+
 
       if (AppState.view === 'books') {
+
         setTopTitle('微读圣经Lite Web');
+
         showOnly('viewBooks');
+
         return;
+
       }
+
+
 
       if (AppState.view === 'chapters') {
+
         setTopTitle(AppState.currentBookName || '选择章节');
+
         showOnly('viewChapters');
+
         return;
+
       }
+
+
 
       if (AppState.view === 'reader') {
+
         setTopTitle(`${AppState.currentBookName} ${AppState.currentChapter}章`);
+
         showOnly('viewReader');
+
         return;
+
       }
+
+
 
       if (AppState.view === 'favorites') {
+
         setTopTitle('收藏夹');
+
         showOnly('viewFavorites');
+
         return;
+
       }
+
     }
 
+
+
+    function escapeHtml(str) {
+
+      return String(str)
+
+        .replace(/&/g, '&amp;')
+
+        .replace(/</g, '&lt;')
+
+        .replace(/>/g, '&gt;')
+
+        .replace(/"/g, '&quot;')
+
+        .replace(/'/g, '&#39;');
+
+    }
+
+
+
     /***********************
+
      * 9) 事件绑定
+
      ***********************/
+
     function bindEvents() {
+
       $('btnBack').addEventListener('click', () => AppState.back());
 
       $('btnHome').addEventListener('click', () => {
+
         TTS.stop();
+
         AppState.history = [];
+
         AppState.go('books');
+
         $('main').scrollTop = 0;
+
       });
+
+
+
+      // 字体调节（你要求改成“字体- / 字体+”）
 
       $('btnFontMinus').addEventListener('click', () => {
+
         const v = FontSetting.dec();
+
         showToast(`字体 ${v}px`);
+
       });
+
       $('btnFontPlus').addEventListener('click', () => {
+
         const v = FontSetting.inc();
+
         showToast(`字体 ${v}px`);
+
       });
+
+
+
+      // 收藏夹
 
       $('btnFavorites').addEventListener('click', () => {
+
         renderFavorites();
+
         AppState.push('favorites');
+
         $('main').scrollTop = 0;
+
       });
+
+
+
+      // 停止朗读
 
       $('btnStopSpeak').addEventListener('click', () => {
+
         TTS.stop();
+
         showToast('已停止朗读');
+
       });
 
-      // 用户首次交互时解锁TTS（移动端关键）
-      const unlockOnce = () => {
-        TTS.unlockFromUserGesture();
-        window.removeEventListener('touchstart', unlockOnce, true);
-        window.removeEventListener('click', unlockOnce, true);
-      };
-      window.addEventListener('touchstart', unlockOnce, true);
-      window.addEventListener('click', unlockOnce, true);
+
+
+      // 页面切换时停止朗读（切后台等）
 
       document.addEventListener('visibilitychange', () => {
+
         if (document.hidden) TTS.stop();
+
       });
+
       window.addEventListener('pagehide', () => TTS.stop());
-      window.addEventListener('beforeunload', () => TTS.stop());
+
     }
 
+
+
     /***********************
+
      * 10) 启动
+
      ***********************/
+
     async function bootstrap() {
+
       try {
+
         FontSetting.set(FontSetting.get());
+
         bindEvents();
+
         TTS.init();
 
-        // 首屏提示优化（内置浏览器）
-        if (isLikelyInAppBrowser()) {
-          $('ttsTip').textContent = '检测到可能为App内置浏览器，网页TTS兼容性较弱；建议在系统浏览器打开。';
-        }
 
-        // 可先渲染loading，再加载JSON
-        render();
 
         await BibleDB.init();
 
+
+
         renderBooks();
+
         AppState.go('books');
 
-        // 空闲时预刷新voices（不阻塞首屏）
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(() => TTS.refreshVoices(), { timeout: 1500 });
-        } else {
-          setTimeout(() => TTS.refreshVoices(), 500);
-        }
       } catch (err) {
+
         console.error(err);
+
         $('viewLoading').innerHTML = `
+
           <div class="empty">
+
             数据加载失败：${escapeHtml(err.message || String(err))}<br><br>
+
             请检查：<br>
+
             1）data目录是否存在；<br>
-            2）文件名是否为：<br>
-            &nbsp;&nbsp;old_testament_data_simplified.json<br>
-            &nbsp;&nbsp;new_testament_data_simplified.json<br>
-            3）是否通过 http/https 打开（不要直接双击 file://）<br>
-            4）服务器是否允许访问 JSON（Content-Type 建议为 application/json）
+
+            2）两个数据文件名是否完全一致；<br>
+
+            3）是否通过 http/https 打开（不要直接双击 file://）。 
+
           </div>
+
         `;
+
         showOnly('viewLoading');
+
         setTopTitle('加载失败');
+
       }
+
     }
 
+
+
     bootstrap();
+
   </script>
+
 </body>
+
 </html>
-
-
-
-
-
-
-
