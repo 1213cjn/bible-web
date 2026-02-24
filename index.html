@@ -428,12 +428,12 @@
       showToast._timer = setTimeout(() => el.classList.remove('show'), ms);
     }
 
-    function safeJSONParse(str, fallback) {
-      try { return JSON.parse(str); } catch (e) { return fallback; }
+    function safeParse(str, fallback) {
+      try { return .parse(str); } catch (e) { return fallback; }
     }
 
     function normalizeVerseText(v) {
-      // 去掉多余空白（你的JSON里经文有较多全角空格风格分隔）
+      // 去掉多余空白（你的里经文有较多全角空格风格分隔）
       return String(v || '').replace(/\s+/g, '');
     }
 
@@ -446,10 +446,10 @@
         .replace(/'/g, '&#39;');
     }
 
-    async function loadJsonArray(url) {
+    async function loadArray(url) {
       const res = await fetch(url, { cache: 'force-cache' });
       if (!res.ok) throw new Error(`加载失败: ${url}`);
-      const data = await res.json();
+      const data = await res.();
       if (!Array.isArray(data)) {
         throw new Error(`数据格式错误（不是数组）: ${url}`);
       }
@@ -543,7 +543,7 @@ function getBookDisplayName(book) {
 }
 
     /***********************
-     * 3) 数据层（JSON）
+     * 3) 数据层（）
      ***********************/
     const BibleDB = {
       loaded: false,
@@ -554,10 +554,10 @@ function getBookDisplayName(book) {
       async init() {
         if (this.loaded) return;
 
-        // 并行加载 JSON（比 CommonJS + eval 更快更稳）
+        // 并行加载 （比 CommonJS + eval 更快更稳）
         const [OT, NT] = await Promise.all([
-          loadJsonArray('./data/old_testament_data_simplified.json'),
-          loadJsonArray('./data/new_testament_data_simplified.json')
+          loadArray('old_testament_data_simplified.json'),
+          loadJsonArray('new_testament_data_simplified.json')
         ]);
 
         this.allBooks = [...OT, ...NT];
@@ -1343,5 +1343,6 @@ function getBookDisplayName(book) {
   </script>
 </body>
 </html>
+
 
 
