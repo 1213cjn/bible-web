@@ -556,7 +556,7 @@ function getBookDisplayName(book) {
 
         // 并行加载 （比 CommonJS + eval 更快更稳）
         const [OT, NT] = await Promise.all([
-          loadArray('./old_testament_data_simplified.json'),
+          loadJsonArray('./old_testament_data_simplified.json'),
           loadJsonArray('./new_testament_data_simplified.json')
         ]);
 
@@ -1343,6 +1343,7 @@ function getBookDisplayName(book) {
   </script>
 </body>
 </html>
+
 
 
 
