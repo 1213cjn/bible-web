@@ -9,28 +9,42 @@
   <title>微读圣经Lite Web</title>
   <style>
     /* 默认/白天主题变量 */
-    :root, body.theme-light {
-      --bg: #f7f7f7;
-      --card: #ffffff;
-      --text: #222222;
-      --sub: #666666;
-      --line: #ececec;
-      --primary: #2b6cb0;
-      --primary-soft: #e8f1ff;
-      --danger: #e53e3e;
-      --shadow: 0 6px 18px rgba(0,0,0,0.06);
-      
-      --radius: 14px;
-      --header-h: 56px;
-      --toolbar-h: 64px;
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
+   :root {
+  /* 默认值放这里 */
+  --bg: #f7f7f7;
+  --card: #ffffff;
+  --text: #222222;
+  --sub: #666666;
+  --line: #ececec;
+  --primary: #2b6cb0;
+  --primary-soft: #e8f1ff;
+  --danger: #e53e3e;
+  --shadow: 0 6px 18px rgba(0,0,0,0.06);
 
-      /* 排版变量，由 JS 动态覆盖 */
-      --font-size: 22px;
-      --line-height: 1.8;
-      --para-spacing: 14px;
-    }
+  --radius: 14px;
+  --header-h: 56px;
+  --toolbar-h: 64px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* 排版变量只在 :root 定义 */
+  --font-size: 22px;
+  --line-height: 1.8;
+  --para-spacing: 14px;
+}
+
+/* 白天主题只放颜色，不要再放排版变量 */
+body.theme-light {
+  --bg: #f7f7f7;
+  --card: #ffffff;
+  --text: #222222;
+  --sub: #666666;
+  --line: #ececec;
+  --primary: #2b6cb0;
+  --primary-soft: #e8f1ff;
+  --danger: #e53e3e;
+  --shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
 
     /* 夜间主题 */
     body.theme-dark {
@@ -417,20 +431,75 @@
     /***********************
      * 3) 书名映射与数据层
      ***********************/
-    const BOOK_NAME_CN = {
-      gn:'创世记', ex:'出埃及记', lv:'利未记', nm:'民数记', dt:'申命记',
-      js:'约书亚记', jg:'士师记', rt:'路得记', '1sm':'撒母耳记上', '2sm':'撒母耳记下',
-      '1ki':'列王纪上', '2ki':'列王纪下', '1ch':'历代志上', '2ch':'历代志下',
-      ezr:'以斯拉记', ne:'尼希米记', et:'以斯帖记', jb:'约伯记', ps:'诗篇', pr:'箴言',
-      ec:'传道书', so:'雅歌', is:'以赛亚书', jr:'耶利米书', lm:'耶利米哀歌', ek:'以西结书',
-      dn:'但以理书', hs:'何西阿书', jl:'约珥书', am:'阿摩司书', ob:'俄巴底亚书', jn:'约拿书',
-      mi:'弥迦书', na:'那鸿书', hk:'哈巴谷书', zp:'西番雅书', hg:'哈该书', zc:'撒迦利亚书', ml:'玛拉基书',
-      mt:'马太福音', mk:'马可福音', lk:'路加福音', jo:'约翰福音', ac:'使徒行传', rm:'罗马书',
-      '1co':'哥林多前书', '2co':'哥林多后书', gl:'加拉太书', ep:'以弗所书', pp:'腓立比书', cl:'歌罗西书',
-      '1ts':'帖撒罗尼迦前书', '2ts':'帖撒罗尼迦后书', '1tm':'提摩太前书', '2tm':'提摩太后书',
-      tt:'提多书', phm:'腓利门书', hb:'希伯来书', jm:'雅各书', '1pe':'彼得前书', '2pe':'彼得后书',
-      '1jo':'约翰一书', '2jo':'约翰二书', '3jo':'约翰三书', jd:'犹大书', re:'启示录'
-    };
+***********************/
+const BOOK_NAME_CN = {
+  // ===== 常见短缩写（你这类数据常见）=====
+  gn:'创世记', ex:'出埃及记', lv:'利未记', nm:'民数记', dt:'申命记',
+  js:'约书亚记', jg:'士师记', rt:'路得记',
+  '1sm':'撒母耳记上', '2sm':'撒母耳记下',
+@@ -74,7 +258,6 @@
+  hs:'何西阿书', jl:'约珥书', am:'阿摩司书', ob:'俄巴底亚书', jn:'约拿书',
+  mi:'弥迦书', na:'那鸿书', hk:'哈巴谷书', zp:'西番雅书', hg:'哈该书',
+  zc:'撒迦利亚书', ml:'玛拉基书',
+
+  mt:'马太福音', mk:'马可福音', lk:'路加福音', jo:'约翰福音',
+  ac:'使徒行传', rm:'罗马书',
+  '1co':'哥林多前书', '2co':'哥林多后书',
+@@ -86,15 +269,10 @@
+  '1jo':'约翰一书', '2jo':'约翰二书', '3jo':'约翰三书',
+  jd:'犹大书', re:'启示录',
+
+  // ===== 常见缩写/全名 =====
+  gen:'创世记', genesis:'创世记',
+  exo:'出埃及记', exodus:'出埃及记',
+  lev:'利未记', leviticus:'利未记',
+  num:'民数记', numbers:'民数记',
+  deu:'申命记', deuteronomy:'申命记',
+  jos:'约书亚记', joshua:'约书亚记',
+  jdg:'士师记', judg:'士师记', judges:'士师记',
+  rut:'路得记', ruth:'路得记',
+  gen:'创世记', genesis:'创世记', exo:'出埃及记', exodus:'出埃及记',
+  lev:'利未记', leviticus:'利未记', num:'民数记', numbers:'民数记',
+  deu:'申命记', deuteronomy:'申命记', jos:'约书亚记', joshua:'约书亚记',
+  jdg:'士师记', judg:'士师记', judges:'士师记', rut:'路得记', ruth:'路得记',
+  '1sa':'撒母耳记上', '2sa':'撒母耳记下',
+  '1kg':'列王纪上', '1kgs':'列王纪上', '1kings':'列王纪上',
+  '2kg':'列王纪下', '2kgs':'列王纪下', '2kings':'列王纪下',
+@@ -111,37 +289,26 @@
+  nah:'那鸿书', nahum:'那鸿书', hab:'哈巴谷书', habakkuk:'哈巴谷书',
+  zep:'西番雅书', zephaniah:'西番雅书', hag:'哈该书', haggai:'哈该书',
+  zec:'撒迦利亚书', zechariah:'撒迦利亚书', mal:'玛拉基书', malachi:'玛拉基书',
+
+  mat:'马太福音', matthew:'马太福音',
+  mar:'马可福音', mark:'马可福音',
+  luk:'路加福音', luke:'路加福音',
+  jhn:'约翰福音', john:'约翰福音',
+  act:'使徒行传', acts:'使徒行传',
+  rom:'罗马书', romans:'罗马书',
+  '1cor':'哥林多前书', '2cor':'哥林多后书',
+  gal:'加拉太书', galatians:'加拉太书',
+  eph:'以弗所书', ephesians:'以弗所书',
+  php:'腓立比书', phil:'腓立比书', philippians:'腓立比书',
+  col:'歌罗西书', colossians:'歌罗西书',
+  '1ths':'帖撒罗尼迦前书', '2ths':'帖撒罗尼迦后书',
+  '1tim':'提摩太前书', '2tim':'提摩太后书',
+  tit:'提多书', titus:'提多书',
+  phm:'腓利门书', philemon:'腓利门书',
+  heb:'希伯来书', hebrews:'希伯来书',
+  jas:'雅各书', james:'雅各书',
+  '1pet':'彼得前书', '2pet':'彼得后书',
+  '1jn':'约翰一书', '2jn':'约翰二书', '3jn':'约翰三书',
+  mat:'马太福音', matthew:'马太福音', mar:'马可福音', mark:'马可福音',
+  luk:'路加福音', luke:'路加福音', jhn:'约翰福音', john:'约翰福音',
+  act:'使徒行传', acts:'使徒行传', rom:'罗马书', romans:'罗马书',
+  '1cor':'哥林多前书', '2cor':'哥林多后书', gal:'加拉太书', galatians:'加拉太书',
+  eph:'以弗所书', ephesians:'以弗所书', php:'腓立比书', phil:'腓立比书', philippians:'腓立比书',
+  col:'歌罗西书', colossians:'歌罗西书', '1ths':'帖撒罗尼迦前书', '2ths':'帖撒罗尼迦后书',
+  '1tim':'提摩太前书', '2tim':'提摩太后书', tit:'提多书', titus:'提多书',
+  philemon:'腓利门书', heb:'希伯来书', hebrews:'希伯来书', jas:'雅各书', james:'雅各书',
+  '1pet':'彼得前书', '2pet':'彼得后书', '1jn':'约翰一书', '2jn':'约翰二书', '3jn':'约翰三书',
+  jude:'犹大书', rev:'启示录', revelation:'启示录'
+};
 
     function getBookDisplayName(book) {
       const abbrevKey = String(book.abbrev || '').trim().toLowerCase();
@@ -664,3 +733,4 @@
   </script>
 </body>
 </html>
+
