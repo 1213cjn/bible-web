@@ -1532,58 +1532,52 @@ function renderBooks() {
       <small>${book.chapterCount} 章</small>
     `;
 
-    el.addEventListener('click', () => {
-      AppState.currentBookId = book.id;
-      AppState.currentBookName = book.name;
-      renderChapters();
-      AppState.push('chapters');
-      $('main').scrollTop = 0;
-    });
+  el.addEventListener('click', async () => {
+    AppState.currentBookId = book.id;
+    AppState.currentBookName = book.name;
+    await renderChapters();
+    AppState.push('chapters');
+    $('main').scrollTop = 0;
+  });
 
     grid.appendChild(el);
   });
 }
 
 
-    function renderChapters() {
-
-      $('chaptersTitle').textContent = `${AppState.currentBookName} · 选择章节`;
-
-      const meta = DB.getBookMetaById(AppState.currentBookId);
-
-      const count = meta ? meta.chapterCount : 0;
-
-      const grid = $('chapterGrid');
-
-      grid.innerHTML = '';
-
-
-
-      for (let i = 1; i <= count; i++) {
-
-        const el = document.createElement('div');
-
-        el.className = 'chapter-item';
-
-        el.textContent = i;
-
-        el.addEventListener('click', () => {
-
-          AppState.currentChapter = i;
-
-          renderReader();
-
-          AppState.push('reader');
-
-          $('main').scrollTop = 0;
-
-        });
-
-        grid.appendChild(el);
-
-      }
-
+   async function renderChapters() {
+  try {
+    if (!DB.loaded) {
+      showToast('书卷数据加载中，请稍候…');
+      await DB.ensureInit();
+      // 数据加载后，书卷页顺便刷新成真实名称
+      renderBooks();
     }
+
+    $('chaptersTitle').textContent = `${AppState.currentBookName} · 选择章节`;
+
+    const meta = DB.getBookMetaById(AppState.currentBookId);
+    const count = meta ? meta.chapterCount : 0;
+    const grid = $('chapterGrid');
+    grid.innerHTML = '';
+
+    for (let i = 1; i <= count; i++) {
+      const el = document.createElement('div');
+      el.className = 'chapter-item';
+      el.textContent = i;
+      el.addEventListener('click', () => {
+        AppState.currentChapter = i;
+        renderReader();
+        AppState.push('reader');
+        $('main').scrollTop = 0;
+      });
+      grid.appendChild(el);
+    }
+  } catch (err) {
+    showToast('数据加载失败，无法打开章节', 2200);
+    console.error(err);
+  }
+}
 
 
 
@@ -2009,56 +2003,38 @@ function renderBooks() {
 
      ***********************/
 
-    async function bootstrap() {
+async function bootstrap() {
+  try {
+    FontSetting.set(FontSetting.get());
+    bindEvents();
+    TTS.init();
 
-      try {
+    // ① 先显示书卷页（占位）
+    AppState.go('books');
+    renderBooks();
 
-        FontSetting.set(FontSetting.get());
-
-        bindEvents();
-
-        TTS.init();
-
-
-
-        await DB.init();
-
-
-
-        renderBooks();
-
-        AppState.go('books');
-
-      } catch (err) {
-
+    // ② 后台异步加载数据（不阻塞首屏）
+    DB.init()
+      .then(() => {
+        renderBooks(); // 加载完成后刷新为真实书卷列表
+      })
+      .catch((err) => {
         console.error(err);
+        renderBooks(); // 会显示错误信息卡
+        showToast('圣经数据加载失败', 2200);
+      });
 
-        $('viewLoading').innerHTML = `
-
-          <div class="empty">
-
-            数据加载失败：${escapeHtml(err.message || String(err))}<br><br>
-
-            请检查：<br>
-
-            1）data目录是否存在；<br>
-
-            2）两个数据文件名是否完全一致；<br>
-
-            3）是否通过 http/https 打开（不要直接双击 file://）。 
-
-          </div>
-
-        `;
-
-        showOnly('viewLoading');
-
-        setTopTitle('加载失败');
-
-      }
-
-    }
-
+  } catch (err) {
+    console.error(err);
+    $('viewLoading').innerHTML = `
+      <div class="empty">
+        初始化失败：${escapeHtml(err.message || String(err))}
+      </div>
+    `;
+    showOnly('viewLoading');
+    setTopTitle('加载失败');
+  }
+}
 
 
     bootstrap();
@@ -2068,6 +2044,7 @@ function renderBooks() {
 </body>
 
 </html>
+
 
 
 
