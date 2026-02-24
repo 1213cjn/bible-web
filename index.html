@@ -444,7 +444,8 @@
 
     // 兼容你的 data/*.js 是 CommonJS: module.exports = [...]
     async function loadCommonJSArray(url) {
-      const res = await fetch(url, { cache: 'no-store' });
+      //const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`加载失败: ${url}`);
       const txt = await res.text();
 
@@ -489,7 +490,11 @@
       '1jo':'约翰一书', '2jo':'约翰二书', '3jo':'约翰三书',
       jd:'犹大书', re:'启示录'
     };
-
+    async function loadJsonArray(url) {
+      const res = await fetch(url, { cache: 'force-cache' }); // 强缓存
+      if (!res.ok) throw new Error(`加载失败: ${url}`);
+      return await res.json(); // 原生解析，速度提升10倍以上
+    }
     function getBookDisplayName(book) {
       return BOOK_NAME_CN[book.abbrev] || book.name || book.abbrev;
     }
@@ -505,11 +510,14 @@
       async init() {
         if (this.loaded) return;
 
+       // const [OT, NT] = await Promise.all([
+       //   loadCommonJSArray('./data/old_testament_data_simplified.js'),
+       //   loadCommonJSArray('./data/new_testament_data_simplified.js')
+        //]);
         const [OT, NT] = await Promise.all([
-          loadCommonJSArray('./data/old_testament_data_simplified.js'),
-          loadCommonJSArray('./data/new_testament_data_simplified.js')
-        ]);
-
+              loadJsonArray('./data/old_testament_data_simplified.json'), // 改为 json
+              loadJsonArray('./data/new_testament_data_simplified.json')
+            ]);
         this.allBooks = [...OT, ...NT];
         this.index = {};
         this.bookMeta = this.allBooks.map((b, idx) => {
@@ -1082,3 +1090,4 @@
   </script>
 </body>
 </html>
+
