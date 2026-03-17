@@ -93,8 +93,12 @@ html, body {
 
 /* 主内容区 */
 .main {
-  flex: 1; overflow: auto; -webkit-overflow-scrolling: touch;
-  padding: 12px 12px calc(var(--toolbar-h) + var(--safe-bottom) + 12px);
+  flex: 1;
+  overflow-y: auto; /* 确保只有主区域可以垂直滚动 */
+  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+  /* 确保底部留出足够空间给 toolbar */
+  padding-bottom: calc(var(--toolbar-h) + var(--safe-bottom) + 20px) !important;
 }
 .hidden { display: none !important; }
 .panel-card {
