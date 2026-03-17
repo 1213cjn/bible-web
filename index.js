@@ -132,29 +132,47 @@ function getBookDisplayName(book) {
 }
 
 // 数据库逻辑
+// 数据库逻辑 - 替换这部分
 const DB = {
   loaded: false,
   index: {},
   bookMeta: [],
 
-  async init() { /* 已有的初始化代码保持不变 */ },
+  async init(OT, NT) { // 接收传入的数据
+    if (this.loaded) return;
+    
+    // 合并新旧约
+    const allBooks = [...OT, ...NT];
+    
+    // 生成索引和元数据
+    this.bookMeta = allBooks.map(b => {
+      // 将书籍存入索引，方便后续查询
+      this.index[b.abbrev] = b; 
+      
+      return { 
+        id: b.abbrev, 
+        name: getBookDisplayName(b), 
+        chapterCount: b.chapters ? b.chapters.length : 0 
+      };
+    });
+    
+    this.loaded = true;
+    console.log("数据库初始化完成:", this.bookMeta.length, "本书");
+  },
 
-  // 新增方法：返回所有书籍的元数据（供目录页使用）
   getBooks() {
-    // 假设 this.bookMeta 的结构是 [{ id, name, chapterCount }, ...]
     return this.bookMeta;
   },
 
-  // 根据书籍 ID 获取该书的元数据
   getBookMetaById(bookId) {
     return this.bookMeta.find(b => b.id === bookId);
   },
 
-  // 根据书籍 ID 和章节号返回该章的所有经文
   getChapterVerses(bookId, chapter) {
-    const book = this.index[bookId]; // 在 init 中已经把书对象存入了 this.index
+    const book = this.index[bookId];
     if (!book || !book.chapters) return [];
-    const chapterData = book.chapters[chapter - 1]; // 章节数组从 0 开始
+    // 章节从 1 开始，数组从 0 开始
+    const chapterData = book.chapters[chapter - 1]; 
     return chapterData ? chapterData.map((text, idx) => ({ verse: idx + 1, text })) : [];
   }
 };
@@ -374,18 +392,30 @@ async function bootstrap() {
   try {
     Settings.load();
     bindEvents();
+    
+    // 1. 修正路径：去掉 /data/，修正后缀：使用 .json
+    // 2. 确保 fetch 的文件名与 GitHub 仓库中完全一致
     const [OT, NT] = await Promise.all([
-      loadBibleData('/data/old_testament_data_simplified.js'), 
-      loadBibleData('/data/new_testament_data_simplified.js')
+      fetch('old_testament_data_simplified.json').then(r => r.json()),
+      fetch('new_testament_data_simplified.json').then(r => r.json())
     ]);
-    // 初始化聊天系统 (来自 chat.js)
-    if (window.ChatSystem) window.ChatSystem.init();
 
-    await DB.init();
+    // 3. 将加载的数据传给 DB 初始化
+    await DB.init(OT, NT);
+    
+    // 4. 渲染页面
     renderBooks();
     AppState.go('books');
+    
+    if (window.ChatSystem) window.ChatSystem.init();
+    
   } catch (err) {
-    $('viewLoading').innerHTML = `<div style="color:red">数据加载失败，请刷新重试<br><small>${err.message}</small></div>`;
+    console.error("加载失败:", err);
+    $('viewLoading').innerHTML = `
+      <div style="color:red; padding:20px;">
+        数据加载失败，请检查文件名是否正确<br>
+        <small>${err.message}</small>
+      </div>`;
   }
 }
 
