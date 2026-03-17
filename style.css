@@ -110,10 +110,7 @@ html, body {
 
 /* 网格布局 */
 .book-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-#viewBooks {
-    display: block !important; /* 强制显示目录视图 */
-    background: red !important; /* 如果变红了，说明容器在那，只是里面的内容有问题 */
-}
+
 .book-item {
     border: 2px solid blue !important; /* 给按键套个蓝边，看能不能看到框 */
     min-height: 50px;
