@@ -193,12 +193,25 @@ function setTopTitle(text) { $('topTitle').textContent = text; }
 
 // 注意：这里加入了 viewChat
 function showOnly(viewId) {
-  ['viewLoading', 'viewBooks', 'viewChapters', 'viewReader', 'viewFavorites', 'viewChat'].forEach(id => {
-    $(id).classList.add('hidden');
+  ['viewLoading', 'viewBooks', 'viewChapters', 'viewReader', 'viewFavorites'].forEach(id => {
+    const el = $(id);
+    if (el) el.classList.add('hidden');
   });
-  $(viewId).classList.remove('hidden');
+  if ($(viewId)) $(viewId).classList.remove('hidden');
 }
-
+async function loadBibleData(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`无法获取文件: ${url}`);
+  // 如果你的文件是纯 JSON，直接用 res.json() 更安全
+  try {
+    const text = await res.text();
+    // 兼容你之前的 module.exports 格式
+    const m = text.match(/module\.exports\s*=\s*([\s\S]*?)\s*;?\s*$/);
+    return m ? (new Function(`return (${m[1]});`))() : JSON.parse(text);
+  } catch (e) {
+    throw new Error("数据解析失败，请检查文件格式");
+  }
+}
 function renderBooks() {
   const grid = $('bookGrid'); grid.innerHTML = '';
   DB.getBooks().forEach(book => {
@@ -345,7 +358,10 @@ async function bootstrap() {
   try {
     Settings.load();
     bindEvents();
-    
+    const [OT, NT] = await Promise.all([
+      loadBibleData('old_testament_data_simplified.js'), 
+      loadBibleData('new_testament_data_simplified.js')
+    ]);
     // 初始化聊天系统 (来自 chat.js)
     if (window.ChatSystem) window.ChatSystem.init();
 
