@@ -275,3 +275,87 @@ function renderFavorites() {
       setTimeout(() => {
         const targetRow = document.querySelectorAll('#verseContainer .verse-row')[item.verse - 1];
         if (targetRow) targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    };
+    row.querySelector('.star-btn').onclick = (e) => {
+      e.stopPropagation();
+      FavoriteStore.remove(item.bookId, item.chapter, item.verse);
+      renderFavorites(); showToast('已取消收藏');
+    };
+    box.appendChild(row);
+  });
+}
+
+function render() {
+  // 左上角返回按钮控制：在主页和加载页隐藏，其他页显示
+  if (AppState.view === 'books' || AppState.view === 'loading') {
+    $('btnBack').style.display = 'none';
+    $('btnChatRoom').style.display = 'block'; // 在主页显示聊天入口
+  } else {
+    $('btnBack').style.display = 'block';
+    $('btnChatRoom').style.display = 'none'; // 其他页隐藏聊天入口
+  }
+
+  // 底部工具栏控制
+  $('toolbar').classList.toggle('hidden', AppState.view !== 'reader' && AppState.view !== 'favorites');
+  
+  const views = {
+    'loading': { title: '微读圣经Lite', fn: () => showOnly('viewLoading') },
+    'books': { title: '圣经目录', fn: () => showOnly('viewBooks') },
+    'chapters': { title: AppState.currentBookName || '选择章节', fn: () => showOnly('viewChapters') },
+    'reader': { title: `${AppState.currentBookName} ${AppState.currentChapter}章`, fn: () => showOnly('viewReader') },
+    'favorites': { title: '我的收藏', fn: () => showOnly('viewFavorites') },
+    'chat': { title: '临时交流室', fn: () => showOnly('viewChat') } // 新增聊天路由
+  };
+  
+  setTopTitle(views[AppState.view].title);
+  views[AppState.view].fn();
+}
+
+function bindEvents() {
+  $('btnBack').onclick = () => AppState.back();
+  $('btnHome').onclick = () => { AppState.history = []; AppState.go('books'); $('main').scrollTop = 0; };
+  $('btnFavorites').onclick = () => { renderFavorites(); AppState.push('favorites'); };
+  
+  // 绑定左上角聊天入口
+  $('btnChatRoom').onclick = () => AppState.push('chat');
+
+  $('btnSettings').onclick = () => {
+    $('settingsOverlay').classList.add('show');
+    $('settingsPanel').classList.add('show');
+  };
+  $('settingsOverlay').onclick = () => {
+    $('settingsOverlay').classList.remove('show');
+    $('settingsPanel').classList.remove('show');
+  };
+
+  document.querySelectorAll('.ctrl-btn[data-theme]').forEach(btn => {
+    btn.onclick = (e) => Settings.setTheme(e.target.dataset.theme);
+  });
+
+  $('btnFontMinus').onclick = () => Settings.changeFont(-2);
+  $('btnFontPlus').onclick = () => Settings.changeFont(2);
+  $('btnLineMinus').onclick = () => Settings.changeLine(-0.2);
+  $('btnLinePlus').onclick = () => Settings.changeLine(0.2);
+  $('btnParaMinus').onclick = () => Settings.changePara(-2);
+  $('btnParaPlus').onclick = () => Settings.changePara(2);
+}
+
+async function bootstrap() {
+  try {
+    Settings.load();
+    bindEvents();
+    
+    // 初始化聊天系统 (来自 chat.js)
+    if (window.ChatSystem) window.ChatSystem.init();
+
+    await DB.init();
+    renderBooks();
+    AppState.go('books');
+  } catch (err) {
+    $('viewLoading').innerHTML = `<div style="color:red">数据加载失败，请刷新重试<br><small>${err.message}</small></div>`;
+  }
+}
+
+// 启动程序
+bootstrap();
