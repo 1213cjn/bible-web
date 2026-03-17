@@ -1,6 +1,6 @@
 // 注意：请将这里的 URL 和 KEY 替换为你 Supabase 控制台的真实数据
-const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+const SUPABASE_URL = 'https://vnmolqkjfixoktvrddma.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_gDv-OZwsV3lUnRMvrZ-GGA_LaiiVXFF';
 
 // 初始化客户端
 const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
