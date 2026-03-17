@@ -136,23 +136,21 @@ const DB = {
   loaded: false, index: {}, bookMeta: [],
   async init() {
     if (this.loaded) return;
+    showToast('正在初始化数据...');
+    
+    // 直接读取根目录下的 JSON 文件，不再使用 data/ 路径
     const [OT, NT] = await Promise.all([
-      loadCommonJSArray('/data/old_testament_data_simplified.js'),
-      loadCommonJSArray('/data/new_testament_data_simplified.js')
+      fetch('old_testament_data_simplified.json').then(r => r.json()),
+      fetch('new_testament_data_simplified.json').then(r => r.json())
     ]);
+    
     const allBooks = [...OT, ...NT];
+    // 逻辑保持不变...
     this.bookMeta = allBooks.map(b => {
       this.index[b.abbrev] = b;
       return { id: b.abbrev, name: getBookDisplayName(b), chapterCount: b.chapters?.length || 0 };
     });
     this.loaded = true;
-  },
-  getBooks() { return this.bookMeta; },
-  getBookMetaById(id) { return this.bookMeta.find(b => b.id === id); },
-  getChapterVerses(id, chNum) {
-    const b = this.index[id];
-    if (!b || !b.chapters || !b.chapters[chNum - 1]) return [];
-    return b.chapters[chNum - 1].map((text, i) => ({ verse: i + 1, text: normalizeVerseText(text) }));
   }
 };
 
