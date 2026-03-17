@@ -1,262 +1,277 @@
-Page({
-  data: {
-    showAR: false,
-    canvasWidth: 0,
-    canvasHeight: 0,
-    width: 0,
-    height: 0,
-    bgImageUrl: '',
-    isGenerating: false,
-    generatedModelUrl: '',
-    CacheModelUrl: '',
-    modelCachedPath: '',
-    progressTip: '',
-    // 新增：临时存储当前缩略图路径，用于自动保存时存入 modelList
-    currentThumbPath: ''
+// 全局工具函数（使用 function 声明保证跨文件可用）
+function $(id) { return document.getElementById(id); }
+
+const STORAGE_KEYS = {
+  favorites: '_favorites_v1',
+  settings: '_reader_settings_v2'
+};
+
+function showToast(msg, ms = 1500) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+function safeJSONParse(str, fallback) {
+  try { return JSON.parse(str) || fallback; } catch (e) { return fallback; }
+}
+
+function normalizeVerseText(v) {
+  return String(v || '').replace(/\s+/g, '');
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+async function loadCommonJSArray(url) {
+  const res = await fetch(url, { cache: 'force-cache' });
+  if (!res.ok) throw new Error(`加载失败: ${url}`);
+  const txt = await res.text();
+  const m = txt.match(/module\.exports\s*=\s*([\s\S]*?)\s*;?\s*$/);
+  if (!m) throw new Error(`无法解析数据文件: ${url}`);
+  return (new Function(`return (${m[1]});`))();
+}
+
+// 设置与排版系统
+const Settings = {
+  data: { theme: 'light', fontSize: 22, lineHeight: 1.8, paraSpacing: 14 },
+  load() {
+    const saved = safeJSONParse(localStorage.getItem(STORAGE_KEYS.settings), null);
+    if (saved) this.data = { ...this.data, ...saved };
+    this.applyAll();
   },
-// 必須補齊這個函數，否則 AR 引擎會因為找不到回調而報錯停止
-handleHitTest(e) {
-  const { position } = e.detail;
-  // 將寵物模型精確定位到點擊的地板位置
-  const pet = this.scene.getNodeById('petModel');
-  if (pet) {
-    pet.item.position.set(position);
-    console.log('模型已放置在地面：', position);
+  save() {
+    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(this.data));
+    this.applyAll();
+  },
+  applyAll() {
+    document.body.className = `theme-${this.data.theme}`;
+    const colors = { light: '#f7f7f7', dark: '#121212', parchment: '#f4ebd8' };
+    $('themeColorMeta').content = colors[this.data.theme];
+    
+    const root = document.documentElement;
+    root.style.setProperty('--font-size', `${this.data.fontSize}px`);
+    root.style.setProperty('--line-height', this.data.lineHeight.toFixed(1));
+    root.style.setProperty('--para-spacing', `${this.data.paraSpacing}px`);
+
+    $('valFont').textContent = this.data.fontSize;
+    $('valLine').textContent = this.data.lineHeight.toFixed(1);
+    $('valPara').textContent = this.data.paraSpacing;
+
+    document.querySelectorAll('.ctrl-btn[data-theme]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === this.data.theme);
+    });
+  },
+  setTheme(t) { this.data.theme = t; this.save(); },
+  changeFont(delta) { this.data.fontSize = Math.max(16, Math.min(36, this.data.fontSize + delta)); this.save(); },
+  changeLine(delta) { this.data.lineHeight = Math.max(1.2, Math.min(2.4, this.data.lineHeight + delta)); this.save(); },
+  changePara(delta) { this.data.paraSpacing = Math.max(8, Math.min(30, this.data.paraSpacing + delta)); this.save(); }
+};
+
+// 书名映射字典 (完整版保留)
+const BOOK_NAME_CN = {
+  gn:'创世记', ex:'出埃及记', lv:'利未记', nm:'民数记', dt:'申命记',
+  js:'约书亚记', jud:'士师记', rt:'路得记',
+  '1sm':'撒母耳记上', '2sm':'撒母耳记下',
+  '1ki':'列王纪上', '2ki':'列王纪下',
+  '1ch':'历代志上', '2ch':'历代志下',
+  ezr:'以斯拉记', ne:'尼希米记', et:'以斯帖记',
+  jb:'约伯记', ps:'诗篇', prv:'箴言', ec:'传道书', so:'雅歌',
+  is:'以赛亚书', jr:'耶利米书', lm:'耶利米哀歌', ez:'以西结书', dn:'但以理书',
+  ho:'何西阿书', jl:'约珥书', am:'阿摩司书', ob:'俄巴底亚书', jn:'约拿书',
+  mi:'弥迦书', na:'那鸿书', hk:'哈巴谷书', zp:'西番雅书', hg:'哈该书',
+  zc:'撒迦利亚书', ml:'玛拉基书',
+
+  mt:'马太福音', mk:'马可福音', lk:'路加福音', jo:'约翰福音',
+  ac:'使徒行传', rm:'罗马书',
+  '1co':'哥林多前书', '2co':'哥林多后书',
+  gl:'加拉太书', ep:'以弗所书', ph:'腓立比书', cl:'歌罗西书',
+  '1ts':'帖撒罗尼迦前书', '2ts':'帖撒罗尼迦后书',
+  '1tm':'提摩太前书', '2tm':'提摩太后书',
+  tt:'提多书', phm:'腓利门书', hb:'希伯来书', jm:'雅各书',
+  '1pe':'彼得前书', '2pe':'彼得后书',
+  '1jo':'约翰一书', '2jo':'约翰二书', '3jo':'约翰三书',
+  jd:'犹大书', re:'启示录',
+
+  gen:'创世记', genesis:'创世记', exo:'出埃及记', exodus:'出埃及记',
+  lev:'利未记', leviticus:'利未记', num:'民数记', numbers:'民数记',
+  deu:'申命记', deuteronomy:'申命记', jos:'约书亚记', joshua:'约书亚记',
+  jdg:'士师记', judg:'士师记', judges:'士师记', rut:'路得记', ruth:'路得记',
+  '1sa':'撒母耳记上', '2sa':'撒母耳记下', '1kg':'列王纪上', '1kgs':'列王纪上', '1kings':'列王纪上',
+  '2kg':'列王纪下', '2kgs':'列王纪下', '2kings':'列王纪下', '1chr':'历代志上', '2chr':'历代志下',
+  ezra:'以斯拉记', neh:'尼希米记', nehemiah:'尼希米记', est:'以斯帖记', esther:'以斯帖记',
+  job:'约伯记', psa:'诗篇', psalms:'诗篇', pro:'箴言', proverbs:'箴言',
+  ecc:'传道书', ecclesiastes:'传道书', sng:'雅歌', songofsolomon:'雅歌',
+  isa:'以赛亚书', isaiah:'以赛亚书', jer:'耶利米书', jeremiah:'耶利米书',
+  lam:'耶利米哀歌', lamentations:'耶利米哀歌', eze:'以西结书', ezekiel:'以西结书',
+  dan:'但以理书', daniel:'但以理书', hos:'何西阿书', hosea:'何西阿书', joe:'约珥书', joel:'约珥书',
+  amo:'阿摩司书', amos:'阿摩司书', oba:'俄巴底亚书', obadiah:'俄巴底亚书',
+  jon:'约拿书', jonah:'约拿书', mic:'弥迦书', micah:'弥迦书',
+  nah:'那鸿书', nahum:'那鸿书', hab:'哈巴谷书', habakkuk:'哈巴谷书',
+  zep:'西番雅书', zephaniah:'西番雅书', hag:'哈该书', haggai:'哈该书',
+  zec:'撒迦利亚书', zechariah:'撒迦利亚书', mal:'玛拉基书', malachi:'玛拉基书',
+
+  mat:'马太福音', matthew:'马太福音', mar:'马可福音', mark:'马可福音',
+  luk:'路加福音', luke:'路加福音', jhn:'约翰福音', john:'约翰福音',
+  act:'使徒行传', acts:'使徒行传', rom:'罗马书', romans:'罗马书',
+  '1cor':'哥林多前书', '2cor':'哥林多后书', gal:'加拉太书', galatians:'加拉太书',
+  eph:'以弗所书', ephesians:'以弗所书', php:'腓立比书', phil:'腓立比书', philippians:'腓立比书',
+  col:'歌罗西书', colossians:'歌罗西书', '1ths':'帖撒罗尼迦前书', '2ths':'帖撒罗尼迦后书',
+  '1tim':'提摩太前书', '2tim':'提摩太后书', tit:'提多书', titus:'提多书',
+  phm:'腓利门书', philemon:'腓利门书', heb:'希伯来书', hebrews:'希伯来书',
+  jas:'雅各书', james:'雅各书', '1pet':'彼得前书', '2pet':'彼得后书',
+  '1jn':'约翰一书', '2jn':'约翰二书', '3jn':'约翰三书', jude:'犹大书', rev:'启示录', revelation:'启示录'
+};
+
+function getBookDisplayName(book) {
+  const abbrevKey = String(book.abbrev || '').trim().toLowerCase();
+  return BOOK_NAME_CN[abbrevKey] || book.name || book.abbrev;
+}
+
+// 数据库逻辑
+const DB = {
+  loaded: false, index: {}, bookMeta: [],
+  async init() {
+    if (this.loaded) return;
+    const [OT, NT] = await Promise.all([
+      loadCommonJSArray('./data/old_testament_data_simplified.js'),
+      loadCommonJSArray('./data/new_testament_data_simplified.js')
+    ]);
+    const allBooks = [...OT, ...NT];
+    this.bookMeta = allBooks.map(b => {
+      this.index[b.abbrev] = b;
+      return { id: b.abbrev, name: getBookDisplayName(b), chapterCount: b.chapters?.length || 0 };
+    });
+    this.loaded = true;
+  },
+  getBooks() { return this.bookMeta; },
+  getBookMetaById(id) { return this.bookMeta.find(b => b.id === id); },
+  getChapterVerses(id, chNum) {
+    const b = this.index[id];
+    if (!b || !b.chapters || !b.chapters[chNum - 1]) return [];
+    return b.chapters[chNum - 1].map((text, i) => ({ verse: i + 1, text: normalizeVerseText(text) }));
   }
-},
+};
 
-onSceneReady(e) {
-  this.scene = e.detail.value;
-  console.log('原生 AR 場景已就緒');
-
-},
-  onLoad() {
-    // 修正系统信息获取 API
-    const info = wx.getSystemSetting();
-    const dpr = info.pixelRatio;
-    this.setData({
-      canvasWidth: Math.ceil(info.windowWidth * dpr),
-      canvasHeight: Math.ceil(info.windowHeight * dpr),
-      width: info.windowWidth,
-      height: info.windowHeight
-    });
-    this.getBackgroundImage();
-    this.loadFirstModelFromCache();
+// 收藏系统
+const FavoriteStore = {
+  load() { return safeJSONParse(localStorage.getItem(STORAGE_KEYS.favorites), []); },
+  save(data) { localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(data)); },
+  has(bookId, chapter, verse) { return this.load().some(it => it.bookId === bookId && it.chapter === chapter && it.verse === verse); },
+  toggle(item) {
+    const arr = this.load();
+    const idx = arr.findIndex(it => it.bookId === item.bookId && it.chapter === item.chapter && it.verse === item.verse);
+    if (idx >= 0) { arr.splice(idx, 1); this.save(arr); return false; }
+    arr.unshift({ ...item, ts: Date.now() });
+    this.save(arr); return true;
   },
-
-  getBackgroundImage() {
-    const fileID = 'cloud://cloud1-1g97wouob440150e.636c-cloud1-1g97wouob440150e-1410792396/pet/bg (2).png';
-    wx.cloud.getTempFileURL({
-      fileList: [fileID]
-    }).then(res => {
-      if (res.fileList && res.fileList.length > 0) {
-        this.setData({
-          bgImageUrl: res.fileList[0].tempFileURL
-        });
-      }
-    }).catch(err => {
-      console.error('获取背景图失败', err);
-    });
-  },
-
-  // 选择图片并生成3D模型
-  async chooseImageAndGenerate() {
-    wx.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      sourceType: ['album', 'camera'],
-      success: async (res) => {
-        const tempFilePath = res.tempFilePaths[0];
-        this.setData({ progressTip: '上传图片中...', isGenerating: true });
-
-        try {
-          // ========== 新增：保存原图作为缩略图 ==========
-          const uploadRes = await wx.cloud.uploadFile({
-            cloudPath: `input_images/${Date.now()}.jpg`,
-            filePath: tempFilePath
-          });
-        
-          // 再保存缩略图
-          const thumbSaveRes = await new Promise((resolve, reject) => {
-            wx.saveFile({
-              tempFilePath: tempFilePath,
-              success: resolve,
-              fail: reject
-            });
-          });
-          const thumbPath = thumbSaveRes.savedFilePath;
-          this.setData({ currentThumbPath: thumbPath });
-        
-          // 继续原来的逻辑...
-          this.setData({ progressTip: '提交生成任务中...' });
-          // 3. 调用提交云函数
-          /*const submitRes = await wx.cloud.callFunction({
-            name: 'submit3dJob',
-            data: { imageUrl }
-          });
-
-          if (!submitRes.result.success) {
-            throw new Error(submitRes.result.error || '提交任务失败');
-          }
-
-          const taskId = submitRes.result.taskId;
-          this.setData({ progressTip: '模型生成中，请稍候...' });
-
-          // 4. 轮询查询结果
-          let finished = false;
-          let modelUrl = '';
-          const maxAttempts = 60;
-          for (let i = 0; i < maxAttempts; i++) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-
-            const queryRes = await wx.cloud.callFunction({
-              name: 'query3dJob',
-              data: { taskId }
-            });
-
-            if (!queryRes.result.success) {
-              throw new Error(queryRes.result.error);
-            }
-
-            const { status, pbrModelUrl: url, error } = queryRes.result;
-            if (status === 'success') {
-              modelUrl = url;
-              finished = true;
-              break;
-            } else if (status === 'failed') {
-              throw new Error(error || '生成失败');
-            }
-            this.setData({ progressTip: `生成中...已等待 ${(i+1)*3} 秒` });
-          }
-
-          if (!finished) {
-            throw new Error('生成超时，请稍后重试');
-          }*/
-          // 5. 保存模型URL到 data
-          this.setData({
-            generatedModelUrl:           'https://tripo-data.rg1.data.tripo3d.com/tcli_69d203a6f59b468ea8f6158e8ca218d1/20260315/9dbc50fc-ea4a-4337-a1bf-2e37e711282a/tripo_pbr_model_9dbc50fc-ea4a-4337-a1bf-2e37e711282a.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfNjlkMjAzYTZmNTliNDY4ZWE4ZjYxNThlOGNhMjE4ZDEvMjAyNjAzMTUvOWRiYzUwZmMtZWE0YS00MzM3LWExYmYtMmUzN2U3MTEyODJhL3RyaXBvX3Bicl9tb2RlbF85ZGJjNTBmYy1lYTRhLTQzMzctYTFiZi0yZTM3ZTcxMTI4MmEuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzczNjE5MjAwfX19XX0_&Signature=Bfb8DW4oVluszZqFlolpDpyon1pDm~jDsxmx73Z8wlIR9NM9EPA6csYUxCb09vS3kk0qMZb77hrGKh5AN2CeRAY71uNv3soPnkbyMyEVRoBX1Mh5VeGyGz28kWJbK81PFKYyVy59~WXO0Q9W7Y0OSPHNM7HFNLZhmdzll4ALIAV8YT7eIsatJQYETKI-42qAX3wSSrxBHsphCaRGUdle~GIptVzbiYfIzMt4A1dHzW0SY8P41Du9vWnbz-GxVKrxHG-j1rU9v0IBpBTcWuNh8q0uGMkotSu4vp2jHIltp1CHhZO3CG5TjnKBXsmM2xdlgCeh44-4nn2K856bwvye2w__',
-            //modelUrl,
-            progressTip: ''
-          });
-
-          // ========== 新增：自动保存模型到缓存 ==========
-          await this.autoSaveModelToCache(); // 调用自动保存函数
-          // ============================================
-
-          wx.showModal({
-            title: '生成成功',
-            content: '3D模型已生成，是否现在打开AR摄像头查看？',
-            success: (modalRes) => {
-              if (modalRes.confirm) {
-                this.setData({ showAR: true });
-              }
-            }
-          });
-
-        } catch (err) {
-          console.error('生成过程出错', err);
-          wx.showToast({
-            title: err.message || '操作失败',
-            icon: 'none'
-          });
-        } finally {
-          this.setData({ isGenerating: false, progressTip: '' });
-        }
-      }
-    });
-  },
-
-  // 新增：自动保存模型（整合原 saveModelToCache 逻辑并加入缩略图）
-  async autoSaveModelToCache() {
-    const { generatedModelUrl, currentThumbPath } = this.data;
-    if (!generatedModelUrl) {
-      console.warn('没有模型可保存');
-      return;
-    }
-
-    wx.showLoading({ title: '保存模型中...' });
-
-    try {
-      // 下载模型文件
-      const downloadRes = await new Promise((resolve, reject) => {
-        wx.downloadFile({
-          url: generatedModelUrl,
-          success: resolve,
-          fail: reject
-        });
-      });
-
-      if (downloadRes.statusCode !== 200) {
-        throw new Error('下载失败');
-      }
-
-      // 保存到本地缓存
-      const saveRes = await new Promise((resolve, reject) => {
-        wx.saveFile({
-          tempFilePath: downloadRes.tempFilePath,
-          success: resolve,
-          fail: reject
-        });
-      });
-
-      // 更新缓存路径（用于显示）
-      this.setData({ modelCachedPath: saveRes.savedFilePath });
-
-      // 将模型信息存入 modelList，附带缩略图路径
-      let modelList = wx.getStorageSync('modelList') || [];
-      const newModel = {
-        filePath: saveRes.savedFilePath,
-        thumbUrl: currentThumbPath || '', // 使用之前保存的缩略图路径
-        name: '模型_' + new Date().toLocaleString(),
-        createTime: new Date().toLocaleString()
-      };
-      modelList.unshift(newModel);
-      wx.setStorageSync('modelList', modelList);
-
-      // 清除临时缩略图路径（可选）
-      this.setData({ currentThumbPath: '' });
-
-      wx.hideLoading();
-      wx.showToast({ title: '已保存到缓存', icon: 'success' });
-      console.log('模型已自动保存，路径：', saveRes.savedFilePath);
-
-    } catch (err) {
-      wx.hideLoading();
-      console.error('自动保存失败', err);
-      wx.showToast({ title: '保存失败', icon: 'none' });
-    }
-  },
-
-  loadFirstModelFromCache() {
-    const modelList = wx.getStorageSync('modelList') || [];
-    if (modelList.length > 0) {
-      const firstModel = modelList[0];
-      this.setData({
-        CacheModelUrl: firstModel.filePath
-      });
-      console.log('已加载缓存模型：', firstModel.filePath);
-    } else {
-      console.log('缓存中暂无模型，将使用默认模型');
-    }
-  },
-
-  // 原保存函数已废弃，但保留供参考（现在自动保存覆盖了它）
-  // saveModelToCache() { ... } 可以删除或保留，为防出错暂时保留但不再使用
-  saveModelToCache() {
-    // 此函数已不再需要，自动保存已在生成后执行
-    wx.showToast({ title: '已自动保存', icon: 'none' });
-  },
-
-  goToModels() {
-    wx.navigateTo({
-      url: '/pages/models/models'
-    });
-  },
-
-  openAR() {
-    this.setData({ showAR: true });
-  },
-  closeAR() {
-    this.setData({ showAR: false });
+  remove(bookId, chapter, verse) {
+    const arr = this.load();
+    const idx = arr.findIndex(it => it.bookId === bookId && it.chapter === chapter && it.verse === verse);
+    if (idx >= 0) { arr.splice(idx, 1); this.save(arr); }
   }
-});
+};
+
+// 状态管理
+const AppState = {
+  view: 'loading', currentBookId: '', currentBookName: '', currentChapter: 1, history: [],
+  push(viewName) {
+    if (this.view && this.view !== 'loading') this.history.push(this.view);
+    this.view = viewName; render();
+  },
+  go(viewName) { this.view = viewName; render(); },
+  back() {
+    if (!this.history.length) { this.go('books'); return; }
+    this.view = this.history.pop(); render();
+  }
+};
+
+function setTopTitle(text) { $('topTitle').textContent = text; }
+
+// 注意：这里加入了 viewChat
+function showOnly(viewId) {
+  ['viewLoading', 'viewBooks', 'viewChapters', 'viewReader', 'viewFavorites', 'viewChat'].forEach(id => {
+    $(id).classList.add('hidden');
+  });
+  $(viewId).classList.remove('hidden');
+}
+
+function renderBooks() {
+  const grid = $('bookGrid'); grid.innerHTML = '';
+  DB.getBooks().forEach(book => {
+    const el = document.createElement('div');
+    el.className = 'book-item';
+    el.innerHTML = `<div>${book.name}</div><small>${book.chapterCount} 章</small>`;
+    el.onclick = () => {
+      AppState.currentBookId = book.id; AppState.currentBookName = book.name;
+      renderChapters(); AppState.push('chapters'); $('main').scrollTop = 0;
+    };
+    grid.appendChild(el);
+  });
+}
+
+function renderChapters() {
+  $('chaptersTitle').textContent = `${AppState.currentBookName} · 选择章节`;
+  const grid = $('chapterGrid'); grid.innerHTML = '';
+  const count = DB.getBookMetaById(AppState.currentBookId)?.chapterCount || 0;
+  for (let i = 1; i <= count; i++) {
+    const el = document.createElement('div');
+    el.className = 'chapter-item'; el.textContent = i;
+    el.onclick = () => {
+      AppState.currentChapter = i; renderReader(); AppState.push('reader'); $('main').scrollTop = 0;
+    };
+    grid.appendChild(el);
+  }
+}
+
+function renderReader() {
+  const { currentBookId: bid, currentBookName: bname, currentChapter: ch } = AppState;
+  $('readerTitle').textContent = `${bname} 第 ${ch} 章`;
+  const box = $('verseContainer'); box.innerHTML = '';
+  
+  const verses = DB.getChapterVerses(bid, ch);
+  if (!verses.length) { box.innerHTML = `<div class="empty">该章节暂无数据</div>`; return; }
+
+  verses.forEach(v => {
+    const row = document.createElement('div');
+    row.className = 'verse-row';
+    const fav = FavoriteStore.has(bid, ch, v.verse);
+    
+    row.innerHTML = `
+      <div class="verse-text"><span class="verse-no">${ch}:${v.verse}</span>${escapeHtml(v.text)}</div>
+      <button class="star-btn ${fav ? 'active' : ''}"> ${fav ? '★' : '☆'} </button>
+    `;
+
+    row.querySelector('.star-btn').onclick = (e) => {
+      e.stopPropagation();
+      const isFav = FavoriteStore.toggle({ bookId: bid, bookName: bname, chapter: ch, verse: v.verse, text: v.text });
+      e.target.classList.toggle('active', isFav);
+      e.target.textContent = isFav ? '★' : '☆';
+      showToast(isFav ? '已收藏' : '已取消收藏');
+    };
+    box.appendChild(row);
+  });
+}
+
+function renderFavorites() {
+  const list = FavoriteStore.load().sort((a,b) => b.ts - a.ts);
+  $('favCountBadge').textContent = `${list.length} 条`;
+  const box = $('favoriteList'); box.innerHTML = '';
+  if (!list.length) { box.innerHTML = `<div class="empty">暂无收藏内容</div>`; return; }
+
+  list.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'verse-row';
+    row.innerHTML = `
+      <div class="verse-text"><span class="verse-no">${item.bookName} ${item.chapter}:${item.verse}</span>${escapeHtml(item.text)}</div>
+      <button class="star-btn active">★</button>
+    `;
+    row.onclick = () => {
+      AppState.currentBookId = item.bookId; AppState.currentBookName = item.bookName; AppState.currentChapter = item.chapter;
+      renderReader(); AppState.push('reader');
+      setTimeout(() => {
+        const targetRow = document.querySelectorAll('#verseContainer .verse-row')[item.verse - 1];
+        if (targetRow) targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
