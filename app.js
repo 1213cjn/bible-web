@@ -137,8 +137,8 @@ const DB = {
   async init() {
     if (this.loaded) return;
     const [OT, NT] = await Promise.all([
-      loadCommonJSArray('./data/old_testament_data_simplified.js'),
-      loadCommonJSArray('./data/new_testament_data_simplified.js')
+      loadCommonJSArray('/data/old_testament_data_simplified.js'),
+      loadCommonJSArray('/data/new_testament_data_simplified.js')
     ]);
     const allBooks = [...OT, ...NT];
     this.bookMeta = allBooks.map(b => {
@@ -359,8 +359,8 @@ async function bootstrap() {
     Settings.load();
     bindEvents();
     const [OT, NT] = await Promise.all([
-      loadBibleData('data/old_testament_data_simplified.js'), 
-      loadBibleData('data/new_testament_data_simplified.js')
+      loadBibleData('/data/old_testament_data_simplified.js'), 
+      loadBibleData('/data/new_testament_data_simplified.js')
     ]);
     // 初始化聊天系统 (来自 chat.js)
     if (window.ChatSystem) window.ChatSystem.init();
