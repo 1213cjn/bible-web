@@ -1,10 +1,15 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5530989985308956" crossorigin="anonymous"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#f7f7f7" id="themeColorMeta" />
   <title>微读圣经Lite Web</title>
-  <link rel="stylesheet" href="style.css">
+  
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -12,10 +17,10 @@
   <div id="app">
     <div class="topbar">
       <div class="topbar-inner">
-        <button id="btnChatRoom" class="icon-btn" style="font-size: 16px;">💬</button>
-        <button id="btnBack" class="icon-btn hidden">‹</button>
-        <div id="topTitle" class="title">微读圣经Lite</div>
-        <button id="btnHome" class="icon-btn">⌂</button>
+        <button id="btnChatRoom" class="icon-btn" aria-label="交流室">💬</button>
+        <button id="btnBack" class="icon-btn" aria-label="返回" style="display:none;">‹</button>
+        <div id="topTitle" class="title">微读圣经Lite Web</div>
+        <button id="btnHome" class="icon-btn" aria-label="首页">⌂</button>
       </div>
     </div>
 
@@ -39,45 +44,88 @@
       <div id="viewReader" class="hidden reader-wrap">
         <div class="reader-head">
           <div id="readerTitle"></div>
-          <div class="reader-sub">点右侧星标可收藏</div>
+          <div class="reader-sub">点右侧星标可收藏或取消收藏</div>
         </div>
         <div id="verseContainer" class="verses"></div>
       </div>
 
       <div id="viewFavorites" class="hidden">
         <div class="panel-card">
-          <div class="section-title">我的收藏 <span id="favCountBadge" class="badge">0 条</span></div>
+          <div class="section-title">
+            我的收藏 <span id="favCountBadge" class="badge">0 条</span>
+          </div>
           <div id="favoriteList"></div>
         </div>
       </div>
 
-      <div id="viewChat" class="hidden">
+      <div id="viewChat" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
         <div id="chatLogin" class="panel-card">
           <div class="section-title">进入交流室</div>
-          <div class="chat-form">
-            <input type="text" id="inputRoomCode" placeholder="输入交流码 (如: 777)">
-            <input type="text" id="inputNickname" placeholder="输入你的昵称">
-            <button id="btnJoinChat" class="btn primary">进入房间</button>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <input type="text" id="inputRoomCode" placeholder="输入交流码 (如: 777)" class="chat-input-base">
+            <input type="text" id="inputNickname" placeholder="输入你的昵称" class="chat-input-base">
+            <button id="btnJoinChat" class="btn primary" style="width: 100%; height: 44px;">进入房间</button>
           </div>
         </div>
-        <div id="chatMain" class="hidden">
-          <div id="chatBox"></div>
-          <div class="chat-input-row">
-            <input type="text" id="msgInput" placeholder="写下你的感悟...">
-            <button id="btnSendMsg" class="btn primary">发送</button>
+
+        <div id="chatMain" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+          <div id="chatBox" class="chat-box">
+             </div>
+          <div class="chat-input-area">
+            <input type="text" id="msgInput" placeholder="写下你的感悟..." class="chat-msg-input">
+            <button id="btnSendMsg" class="btn primary" style="flex: none; width: 60px; min-height: 36px; border-radius: 20px;">发送</button>
           </div>
         </div>
       </div>
-    </div>
+      </div>
 
     <div id="toolbar" class="toolbar hidden">
-      <button id="btnFavorites" class="btn primary">★ 收藏夹</button>
-      <button id="btnSettings" class="btn">Aa 设置</button>
+      <button id="btnFavorites" class="btn primary" type="button">★ 收藏夹</button>
+      <button id="btnSettings" class="btn" type="button">Aa 阅读设置</button>
     </div>
   </div>
 
   <div id="settingsOverlay" class="settings-overlay"></div>
-  <div id="settingsPanel" class="settings-panel">...</div>
+  <div id="settingsPanel" class="settings-panel">
+    <div class="settings-row">
+      <div class="settings-label">主题</div>
+      <div class="settings-controls">
+        <button class="ctrl-btn" data-theme="light">白天</button>
+        <button class="ctrl-btn" data-theme="parchment">羊皮纸</button>
+        <button class="ctrl-btn" data-theme="dark">夜间</button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">字体</div>
+      <div class="settings-controls">
+        <div class="ctrl-group">
+          <button id="btnFontMinus">A-</button>
+          <div class="val" id="valFont">22</div>
+          <button id="btnFontPlus">A+</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">行距</div>
+      <div class="settings-controls">
+        <div class="ctrl-group">
+          <button id="btnLineMinus">-</button>
+          <div class="val" id="valLine">1.8</div>
+          <button id="btnLinePlus">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">段距</div>
+      <div class="settings-controls">
+        <div class="ctrl-group">
+          <button id="btnParaMinus">-</button>
+          <div class="val" id="valPara">14</div>
+          <button id="btnParaPlus">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast"></div>
 
