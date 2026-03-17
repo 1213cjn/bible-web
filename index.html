@@ -1,77 +1,59 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5530989985308956" crossorigin="anonymous"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#f7f7f7" id="themeColorMeta" />
   <title>微读圣经Lite Web</title>
-  
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="index.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
   <div id="app">
     <div class="topbar">
       <div class="topbar-inner">
-        <button id="btnChatRoom" class="icon-btn" aria-label="交流室" onclick="window.location.href='chat.html'">💬</button>
-        <button id="btnBack" class="icon-btn" aria-label="返回" style="display:none;">‹</button>
-        <div id="topTitle" class="title">微读圣经Lite Web</div>
-        <button id="btnHome" class="icon-btn" aria-label="首页">⌂</button>
+        <button id="btnChatRoom" class="icon-btn" onclick="window.location.href='chat.html'">💬</button>
+        <button id="btnBack" class="icon-btn" style="display:none;">‹</button>
+        <div id="topTitle" class="title">加载中...</div>
+        <button id="btnHome" class="icon-btn">⌂</button>
       </div>
     </div>
 
     <div id="main" class="main">
-      <div id="viewLoading" class="loading">正在加载圣经数据…</div>
-
-      <div id="viewBooks" class="hidden">
-        <div class="panel-card">
-          <div class="section-title">请选择书卷</div>
-          <div id="bookGrid" class="book-grid"></div>
-        </div>
-      </div>
-
-      <div id="viewChapters" class="hidden">
-        <div class="panel-card">
-          <div id="chaptersTitle" class="section-title">选择章节</div>
-          <div id="chapterGrid" class="chapter-grid"></div>
-        </div>
-      </div>
-
-      <div id="viewReader" class="hidden reader-wrap">
-        <div class="reader-head">
-          <div id="readerTitle"></div>
-          <div class="reader-sub">点右侧星标可收藏或取消收藏</div>
-        </div>
-        <div id="verseContainer" class="verses"></div>
-      </div>
-
-      <div id="viewFavorites" class="hidden">
-        <div class="panel-card">
-          <div class="section-title">
-            我的收藏 <span id="favCountBadge" class="badge">0 条</span>
-          </div>
-          <div id="favoriteList"></div>
-        </div>
-      </div>
-
-      </div>
+      <div id="viewLoading" class="loading">正在加载圣经数据...</div>
+      <div id="viewBooks" class="hidden"><div class="panel-card"><div id="bookGrid" class="book-grid"></div></div></div>
+      <div id="viewChapters" class="hidden"><div class="panel-card"><div id="chaptersTitle" class="section-title"></div><div id="chapterGrid" class="chapter-grid"></div></div></div>
+      <div id="viewReader" class="hidden reader-wrap"><div class="reader-head"><div id="readerTitle"></div></div><div id="verseContainer" class="verses"></div></div>
+      <div id="viewFavorites" class="hidden"><div class="panel-card"><div class="section-title">我的收藏 <span id="favCountBadge" class="badge">0</span></div><div id="favoriteList"></div></div></div>
+    </div>
 
     <div id="toolbar" class="toolbar hidden">
-      <button id="btnFavorites" class="btn primary" type="button">★ 收藏夹</button>
-      <button id="btnSettings" class="btn" type="button">Aa 阅读设置</button>
+      <button id="btnFavorites" class="btn primary">★ 收藏夹</button>
+      <button id="btnSettings" class="btn">Aa 设置</button>
     </div>
   </div>
 
   <div id="settingsOverlay" class="settings-overlay"></div>
   <div id="settingsPanel" class="settings-panel">
+    <div class="settings-row">
+      <div class="settings-label">主题</div>
+      <div class="settings-controls">
+        <button class="ctrl-btn" data-theme="light">白天</button>
+        <button class="ctrl-btn" data-theme="parchment">羊皮纸</button>
+        <button class="ctrl-btn" data-theme="dark">夜间</button>
       </div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">字号</div>
+      <div class="settings-controls">
+        <button id="btnFontMinus">-</button> <span id="valFont">22</span> <button id="btnFontPlus">+</button>
+      </div>
+    </div>
+    <span id="valLine" style="display:none">1.8</span>
+    <span id="valPara" style="display:none">14</span>
+  </div>
 
   <div id="toast" class="toast"></div>
-
-  <script src="app.js"></script>
-  </body>
+  <script src="index.js"></script>
+</body>
 </html>
