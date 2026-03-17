@@ -73,19 +73,20 @@ window.ChatSystem = {
     const content = $('msgInput').value.trim();
     if (!content) return;
     
+    // 这里的 key 必须和截图里的 Name 一致
     const { error } = await sbClient.from('messages').insert([{
-      nickname: this.nickname,
-      content: content,
-      room_code: this.roomCode
+      user_name: this.nickname, // 改 nickname 为 user_name
+      content: content
+      // 暂时删掉 room_code，因为你数据库里没这一列
     }]);
-
+  
     if (!error) {
-      $('msgInput').value = ''; // 发送成功清空输入框
+      $('msgInput').value = '';
     } else {
       showToast('发送失败');
       console.error(error);
     }
-  },
+  }
 
   renderMsg(m) {
     const isMe = (m.nickname === this.nickname);
