@@ -4,34 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>临时交流室</title>
-    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* 针对独立聊天页面的微调 */
-        body { display: flex; flex-direction: column; height: 100vh; margin: 0; }
-        .main-chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        #chatBox { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
-        .back-nav { padding: 10px; background: var(--card); border-bottom: 1px solid var(--line); display: flex; align-items: center; }
+        :root {
+            --primary: #007AFF;
+            --bg: #f5f5f7;
+            --card: #ffffff;
+            --line: #e5e5e5;
+            --text: #333;
+        }
+        body { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            margin: 0; 
+            font-family: -apple-system, sans-serif;
+            background: var(--bg);
+        }
+        .hidden { display: none !important; }
+
+        /* 顶部导航 */
+        .topbar {
+            height: 50px;
+            background: var(--card);
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            justify-content: space-between;
+        }
+        .title { font-weight: bold; }
+
+        /* 登录面板 */
+        .panel-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .chat-input-base {
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .btn.primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 聊天主界面 */
+        .main-chat-container { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+        #chatBox { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+        }
+        
+        /* 气泡样式 */
+        .msg-row { display: flex; flex-direction: column; max-width: 80%; }
+        .msg-row.me { align-self: flex-end; align-items: flex-end; }
+        .msg-row.others { align-self: flex-start; align-items: flex-start; }
+        .msg-info { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .msg-bubble { 
+            padding: 10px 14px; 
+            border-radius: 15px; 
+            font-size: 15px; 
+            word-break: break-all;
+        }
+        .me .msg-bubble { background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .others .msg-bubble { background: #e9e9eb; color: black; border-bottom-left-radius: 2px; }
+
+        /* 输入区域 */
+        .chat-input-area {
+            padding: 10px;
+            background: var(--card);
+            border-top: 1px solid var(--line);
+            display: flex;
+            gap: 10px;
+        }
+        .chat-msg-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            outline: none;
+        }
     </style>
 </head>
-<body class="theme-light">
+<body>
 
     <div class="topbar">
-        <div class="topbar-inner">
-            <button onclick="window.location.href='index.html'" class="icon-btn">‹</button>
-            <div class="title" id="roomTitle">交流室</div>
-            <div style="width:40px"></div> </div>
+        <button onclick="location.reload()" style="background:none;border:none;font-size:20px;">‹</button>
+        <div class="title" id="roomTitle">交流室</div>
+        <div style="width:20px"></div>
     </div>
 
     <div class="main-chat-container">
         <div id="chatLogin" class="panel-card" style="margin: 20px;">
-            <div class="section-title">加入交流</div>
+            <h3 style="margin-top:0">加入交流</h3>
             <input type="text" id="inputRoomCode" placeholder="房间号 (如: 777)" class="chat-input-base" style="width:100%; margin-bottom:10px;">
             <input type="text" id="inputNickname" placeholder="你的昵称" class="chat-input-base" style="width:100%; margin-bottom:10px;">
-            <button id="btnJoinChat" class="btn primary" style="width:100%; height:45px;">进入</button>
+            <button id="btnJoinChat" class="btn primary" style="width:100%; height:45px;">进入房间</button>
         </div>
 
-        <div id="chatMain" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+        <div id="chatMain" class="hidden" style="flex-direction: column; height: 100%;">
             <div id="chatBox"></div>
             <div class="chat-input-area">
                 <input type="text" id="msgInput" placeholder="写下感悟..." class="chat-msg-input">
@@ -40,21 +130,120 @@
         </div>
     </div>
 
-    <div id="toast" class="toast"></div>
-
-    <script src="chat.js"></script>
     <script>
-        // 确保页面加载完后执行初始化
-        window.onload = () => {
-            if (window.ChatSystem) {
-                window.ChatSystem.init();
-            } else {
-                console.error("ChatSystem 逻辑未加载");
+        // --- 1. 配置信息 ---
+        const SUPABASE_URL = 'https://vnmolqkjfixoktvrddma.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_gDv-OZwsV3lUnRMvrZ-GGA_LaiiVXFF';
+        
+        const $ = id => document.getElementById(id);
+        const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- 2. 聊天逻辑核心 ---
+        window.ChatSystem = {
+            roomCode: '',
+            nickname: '',
+            subscription: null,
+
+            init() {
+                $('btnJoinChat').onclick = () => this.join();
+                $('btnSendMsg').onclick = () => this.send();
+                $('msgInput').onkeydown = (e) => { if (e.key === 'Enter') this.send(); };
+            },
+
+            async join() {
+                this.roomCode = $('inputRoomCode').value.trim();
+                this.nickname = $('inputNickname').value.trim();
+                
+                if (!this.roomCode || !this.nickname) {
+                    alert('请填写完整信息');
+                    return;
+                }
+
+                // 获取历史消息
+                const { data, error } = await sbClient
+                    .from('messages')
+                    .select('*')
+                    .eq('room_code', this.roomCode)
+                    .order('created_at', { ascending: true })
+                    .limit(50);
+                
+                if (error) {
+                    console.error("加载失败:", error.message);
+                    alert("进入失败，请检查数据库字段: " + error.message);
+                    return;
+                }
+
+                // 界面切换
+                $('chatLogin').classList.add('hidden');
+                $('chatMain').classList.remove('hidden');
+                $('chatMain').style.display = 'flex';
+                $('roomTitle').textContent = '交流室: ' + this.roomCode;
+                
+                if (data) {
+                    $('chatBox').innerHTML = '';
+                    data.forEach(m => this.renderMsg(m));
+                }
+
+                // 订阅实时消息
+                this.setupRealtime();
+            },
+
+            setupRealtime() {
+                if (this.subscription) sbClient.removeChannel(this.subscription);
+                
+                this.subscription = sbClient.channel('room-' + this.roomCode)
+                    .on('postgres_changes', { 
+                        event: 'INSERT', 
+                        schema: 'public', 
+                        table: 'messages',
+                        filter: `room_code=eq.${this.roomCode}` 
+                    }, payload => {
+                        this.renderMsg(payload.new);
+                    })
+                    .subscribe();
+            },
+
+            async send() {
+                const input = $('msgInput');
+                const content = input.value.trim();
+                if (!content) return;
+                
+                const { error } = await sbClient.from('messages').insert([{
+                    user_name: this.nickname,
+                    content: content,
+                    room_code: this.roomCode
+                }]);
+
+                if (!error) {
+                    input.value = '';
+                } else {
+                    alert('发送失败: ' + error.message);
+                }
+            },
+
+            renderMsg(m) {
+                const isMe = (m.user_name === this.nickname);
+                const div = document.createElement('div');
+                div.className = `msg-row ${isMe ? 'me' : 'others'}`;
+                
+                const timeStr = m.created_at ? new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
+                
+                // 安全转义 HTML
+                const safeContent = document.createElement('div');
+                safeContent.textContent = m.content;
+                
+                div.innerHTML = `
+                    <div class="msg-info">${m.user_name} ${timeStr}</div>
+                    <div class="msg-bubble">${safeContent.innerHTML}</div>
+                `;
+                
+                $('chatBox').appendChild(div);
+                $('chatBox').scrollTop = $('chatBox').scrollHeight;
             }
         };
-    
-        function showToast(msg) { /* ...你原有的逻辑... */ }
-        const $ = id => document.getElementById(id);
+
+        // 启动
+        window.onload = () => window.ChatSystem.init();
     </script>
 </body>
 </html>
