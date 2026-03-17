@@ -5,26 +5,133 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="theme-color" content="#f7f7f7" id="themeColorMeta" />
   <title>微读圣经Lite Web</title>
-  <link rel="stylesheet" href="index.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    /* 核心主题变量 */
+    :root {
+      --bg: #f7f7f7; --card: #ffffff; --text: #222222; --sub: #666666;
+      --line: #ececec; --primary: #2b6cb0; --primary-soft: #e8f1ff;
+      --danger: #e53e3e; --shadow: 0 6px 18px rgba(0,0,0,0.06);
+      --radius: 14px; --header-h: 56px; --toolbar-h: 64px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --font-size: 22px; --line-height: 1.8; --para-spacing: 14px;
+    }
+
+    body.theme-light { --bg: #f7f7f7; --card: #ffffff; --text: #222222; }
+    body.theme-dark { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --sub: #999999; --line: #333333; --primary: #63b3ed; --primary-soft: #2a4365; }
+    body.theme-parchment { --bg: #f4ebd8; --card: #fdf6e3; --text: #4a3c31; --line: #e2d5c3; --primary: #8c6b4a; }
+
+    /* 基础布局 */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { 
+      margin: 0; padding: 0; background: var(--bg); color: var(--text);
+      font-family: -apple-system, sans-serif; height: 100%; overflow: hidden;
+    }
+    #app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+
+    /* 顶部导航 */
+    .topbar { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); padding-top: var(--safe-top); }
+    .topbar-inner { height: var(--header-h); display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; padding: 0 6px; }
+    .title { text-align: center; font-weight: 700; font-size: 18px; }
+    .icon-btn { height: 40px; width: 40px; border: none; background: transparent; font-size: 20px; color: var(--text); cursor: pointer; }
+
+    /* 内容区 */
+    .main { 
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; 
+      padding: 12px; padding-bottom: calc(var(--toolbar-h) + var(--safe-bottom) + 20px); 
+    }
+    .hidden { display: none !important; }
+    .panel-card { background: var(--card); border-radius: var(--radius); padding: 12px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+
+    /* 按钮网格 */
+    .book-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .book-item {
+      border: 1px solid var(--line); background: var(--card); border-radius: 12px;
+      padding: 14px 8px; text-align: center; cursor: pointer; color: var(--text);
+    }
+    .book-item:active { background: var(--line); }
+
+    .chapter-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+    .chapter-item {
+      height: 46px; display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; background: var(--primary-soft); color: var(--primary); font-weight: 700;
+    }
+
+    /* 阅读器样式 */
+    .verse-row { 
+      display: grid; grid-template-columns: 1fr 42px; gap: 8px; padding: var(--para-spacing) 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .verse-text { font-size: var(--font-size); line-height: var(--line-height); }
+    .verse-no { font-weight: 700; color: var(--primary); margin-right: 6px; }
+
+    /* 设置面板 */
+    .settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; }
+    .settings-overlay.show { display: block; }
+    .settings-panel { 
+      position: fixed; bottom: -100%; left: 0; right: 0; background: var(--card); 
+      border-radius: 20px 20px 0 0; padding: 20px; z-index: 50; transition: 0.3s; 
+    }
+    .settings-panel.show { bottom: 0; }
+    .settings-row { display: flex; align-items: center; margin-bottom: 15px; }
+    .settings-label { width: 60px; font-size: 14px; }
+    .ctrl-btn { flex: 1; padding: 10px; border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 8px; margin: 0 4px; }
+    .ctrl-btn.active { background: var(--primary); color: white; }
+
+    /* 底部栏 */
+    .toolbar { 
+      position: fixed; bottom: 0; left: 0; right: 0; height: var(--toolbar-h);
+      padding-bottom: var(--safe-bottom); background: var(--bg); border-top: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-around; z-index: 15;
+    }
+    .btn { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+    .btn.primary { background: var(--primary-soft); color: var(--primary); }
+
+    .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 8px 16px; border-radius: 20px; opacity: 0; transition: 0.3s; z-index: 100; }
+    .toast.show { opacity: 1; }
+    
+    @media (min-width: 768px) { #app { max-width: 500px; margin: 0 auto; border: 1px solid var(--line); } }
+  </style>
+
+  <script src="https://lib.baomitu.com/supabase/2.39.7/supabase-js.js"></script>
 </head>
 <body>
   <div id="app">
     <div class="topbar">
       <div class="topbar-inner">
-        <button id="btnChatRoom" class="icon-btn" onclick="window.location.href='chat.html'">💬</button>
+        <button id="btnChatRoom" class="icon-btn">💬</button>
         <button id="btnBack" class="icon-btn" style="display:none;">‹</button>
-        <div id="topTitle" class="title">加载中...</div>
+        <div id="topTitle" class="title">圣经Lite</div>
         <button id="btnHome" class="icon-btn">⌂</button>
       </div>
     </div>
 
     <div id="main" class="main">
-      <div id="viewLoading" class="loading">正在加载圣经数据...</div>
-      <div id="viewBooks" class="hidden"><div class="panel-card"><div id="bookGrid" class="book-grid"></div></div></div>
-      <div id="viewChapters" class="hidden"><div class="panel-card"><div id="chaptersTitle" class="section-title"></div><div id="chapterGrid" class="chapter-grid"></div></div></div>
-      <div id="viewReader" class="hidden reader-wrap"><div class="reader-head"><div id="readerTitle"></div></div><div id="verseContainer" class="verses"></div></div>
-      <div id="viewFavorites" class="hidden"><div class="panel-card"><div class="section-title">我的收藏 <span id="favCountBadge" class="badge">0</span></div><div id="favoriteList"></div></div></div>
+      <div id="viewLoading" class="loading" style="text-align:center; padding:50px;">正在载入圣经数据...</div>
+      
+      <div id="viewBooks" class="hidden">
+        <div class="panel-card"><div id="bookGrid" class="book-grid"></div></div>
+      </div>
+
+      <div id="viewChapters" class="hidden">
+        <div class="panel-card">
+          <div id="chaptersTitle" style="text-align:center; margin-bottom:15px; color:var(--sub);"></div>
+          <div id="chapterGrid" class="chapter-grid"></div>
+        </div>
+      </div>
+
+      <div id="viewReader" class="hidden">
+        <div id="readerTitle" style="text-align:center; font-weight:bold; margin-bottom:10px;"></div>
+        <div id="verseContainer" class="panel-card"></div>
+      </div>
+
+      <div id="viewFavorites" class="hidden">
+        <div class="panel-card">
+          <div style="text-align:center; padding:10px;">我的收藏 <span id="favCountBadge" class="badge">0</span></div>
+          <div id="favoriteList"></div>
+        </div>
+      </div>
     </div>
 
     <div id="toolbar" class="toolbar hidden">
@@ -37,23 +144,21 @@
   <div id="settingsPanel" class="settings-panel">
     <div class="settings-row">
       <div class="settings-label">主题</div>
-      <div class="settings-controls">
-        <button class="ctrl-btn" data-theme="light">白天</button>
-        <button class="ctrl-btn" data-theme="parchment">羊皮纸</button>
-        <button class="ctrl-btn" data-theme="dark">夜间</button>
-      </div>
+      <button class="ctrl-btn" data-theme="light">白天</button>
+      <button class="ctrl-btn" data-theme="parchment">古卷</button>
+      <button class="ctrl-btn" data-theme="dark">夜间</button>
     </div>
     <div class="settings-row">
       <div class="settings-label">字号</div>
-      <div class="settings-controls">
-        <button id="btnFontMinus">-</button> <span id="valFont">22</span> <button id="btnFontPlus">+</button>
-      </div>
+      <button id="btnFontMinus" class="ctrl-btn">-</button>
+      <span id="valFont" style="width:40px; text-align:center;">22</span>
+      <button id="btnFontPlus" class="ctrl-btn">+</button>
     </div>
-    <span id="valLine" style="display:none">1.8</span>
-    <span id="valPara" style="display:none">14</span>
+    <button onclick="document.getElementById('settingsOverlay').click()" style="width:100%; padding:10px; margin-top:10px; border:none; background:var(--line); border-radius:8px;">关闭</button>
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="/index.js"></script>
+
+  <script src="index.js"></script>
 </body>
 </html>
