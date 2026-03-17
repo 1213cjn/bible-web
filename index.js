@@ -396,8 +396,8 @@ async function bootstrap() {
     // 1. 修正路径：去掉 /data/，修正后缀：使用 .json
     // 2. 确保 fetch 的文件名与 GitHub 仓库中完全一致
     const [OT, NT] = await Promise.all([
-      fetch('/old_testament_data_simplified.json').then(r => r.json()),
-      fetch('/new_testament_data_simplified.json').then(r => r.json())
+      fetch('old_testament_data_simplified.json').then(r => r.json()),
+      fetch('new_testament_data_simplified.json').then(r => r.json())
     ]);
 
     // 3. 将加载的数据传给 DB 初始化
