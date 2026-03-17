@@ -359,8 +359,8 @@ async function bootstrap() {
     Settings.load();
     bindEvents();
     const [OT, NT] = await Promise.all([
-      loadBibleData('old_testament_data_simplified.js'), 
-      loadBibleData('new_testament_data_simplified.js')
+      loadBibleData('data/old_testament_data_simplified.js'), 
+      loadBibleData('data/new_testament_data_simplified.js')
     ]);
     // 初始化聊天系统 (来自 chat.js)
     if (window.ChatSystem) window.ChatSystem.init();
