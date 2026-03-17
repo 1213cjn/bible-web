@@ -44,18 +44,16 @@
 
     <script src="chat.js"></script>
     <script>
-        // 简单的 Toast 兼容逻辑
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 2000);
-        }
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        // 确保页面加载完后执行初始化
+        window.onload = () => {
+            if (window.ChatSystem) {
+                window.ChatSystem.init();
+            } else {
+                console.error("ChatSystem 逻辑未加载");
+            }
+        };
+    
+        function showToast(msg) { /* ...你原有的逻辑... */ }
         const $ = id => document.getElementById(id);
     </script>
 </body>
