@@ -195,7 +195,8 @@ function showOnly(viewId) {
     const el = $(id);
     if (el) el.classList.add('hidden');
   });
-  if ($(viewId)) $(viewId).classList.remove('hidden');
+  const target = $(viewId);
+  if (target) target.classList.remove('hidden');
 }
 async function loadBibleData(url) {
   const res = await fetch(url);
