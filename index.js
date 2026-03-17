@@ -325,32 +325,44 @@ function render() {
 }
 
 function bindEvents() {
-  $('btnBack').onclick = () => AppState.back();
-  $('btnHome').onclick = () => { AppState.history = []; AppState.go('books'); $('main').scrollTop = 0; };
-  $('btnFavorites').onclick = () => { renderFavorites(); AppState.push('favorites'); };
+  // 基础导航绑定
+  if ($('btnBack')) $('btnBack').onclick = () => AppState.back();
+  if ($('btnHome')) $('btnHome').onclick = () => { AppState.history = []; AppState.go('books'); $('main').scrollTop = 0; };
+  if ($('btnFavorites')) $('btnFavorites').onclick = () => { renderFavorites(); AppState.push('favorites'); };
   
-  // 绑定左上角聊天入口
-  $('btnChatRoom').onclick = () => AppState.push('chat');
+  // 聊天室入口
+  if ($('btnChatRoom')) {
+      $('btnChatRoom').onclick = () => {
+          // 如果你希望在当前页打开，用 AppState.push('chat')
+          // 如果是独立页面，用下面这行：
+          window.location.href = 'chat.html';
+      };
+  }
 
-  $('btnSettings').onclick = () => {
-    $('settingsOverlay').classList.add('show');
-    $('settingsPanel').classList.add('show');
-  };
-  $('settingsOverlay').onclick = () => {
-    $('settingsOverlay').classList.remove('show');
-    $('settingsPanel').classList.remove('show');
-  };
+  // 设置面板绑定 (增加 null 检查，防止找不到元素而崩溃)
+  const btnSettings = $('btnSettings');
+  if (btnSettings) {
+      btnSettings.onclick = () => {
+          if ($('settingsOverlay')) $('settingsOverlay').classList.add('show');
+          if ($('settingsPanel')) $('settingsPanel').classList.add('show');
+      };
+  }
 
+  if ($('settingsOverlay')) {
+      $('settingsOverlay').onclick = () => {
+          $('settingsOverlay').classList.remove('show');
+          $('settingsPanel').classList.remove('show');
+      };
+  }
+
+  // 主题切换
   document.querySelectorAll('.ctrl-btn[data-theme]').forEach(btn => {
     btn.onclick = (e) => Settings.setTheme(e.target.dataset.theme);
   });
 
-  $('btnFontMinus').onclick = () => Settings.changeFont(-2);
-  $('btnFontPlus').onclick = () => Settings.changeFont(2);
-  $('btnLineMinus').onclick = () => Settings.changeLine(-0.2);
-  $('btnLinePlus').onclick = () => Settings.changeLine(0.2);
-  $('btnParaMinus').onclick = () => Settings.changePara(-2);
-  $('btnParaPlus').onclick = () => Settings.changePara(2);
+  // 字号加减 (这些最容易导致 null 报错，加上保护)
+  if ($('btnFontMinus')) $('btnFontMinus').onclick = () => Settings.changeFont(-2);
+  if ($('btnFontPlus')) $('btnFontPlus').onclick = () => Settings.changeFont(2);
 }
 
 async function bootstrap() {
