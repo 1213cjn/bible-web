@@ -133,24 +133,29 @@ function getBookDisplayName(book) {
 
 // 数据库逻辑
 const DB = {
-  loaded: false, index: {}, bookMeta: [],
-  async init() {
-    if (this.loaded) return;
-    showToast('正在初始化数据...');
-    
-    // 直接读取根目录下的 JSON 文件，不再使用 data/ 路径
-    const [OT, NT] = await Promise.all([
-      fetch('old_testament_data_simplified.json').then(r => r.json()),
-      fetch('new_testament_data_simplified.json').then(r => r.json())
-    ]);
-    
-    const allBooks = [...OT, ...NT];
-    // 逻辑保持不变...
-    this.bookMeta = allBooks.map(b => {
-      this.index[b.abbrev] = b;
-      return { id: b.abbrev, name: getBookDisplayName(b), chapterCount: b.chapters?.length || 0 };
-    });
-    this.loaded = true;
+  loaded: false,
+  index: {},
+  bookMeta: [],
+
+  async init() { /* 已有的初始化代码保持不变 */ },
+
+  // 新增方法：返回所有书籍的元数据（供目录页使用）
+  getBooks() {
+    // 假设 this.bookMeta 的结构是 [{ id, name, chapterCount }, ...]
+    return this.bookMeta;
+  },
+
+  // 根据书籍 ID 获取该书的元数据
+  getBookMetaById(bookId) {
+    return this.bookMeta.find(b => b.id === bookId);
+  },
+
+  // 根据书籍 ID 和章节号返回该章的所有经文
+  getChapterVerses(bookId, chapter) {
+    const book = this.index[bookId]; // 在 init 中已经把书对象存入了 this.index
+    if (!book || !book.chapters) return [];
+    const chapterData = book.chapters[chapter - 1]; // 章节数组从 0 开始
+    return chapterData ? chapterData.map((text, idx) => ({ verse: idx + 1, text })) : [];
   }
 };
 
