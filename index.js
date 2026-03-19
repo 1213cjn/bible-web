@@ -285,26 +285,5 @@ async function bootstrap() {
     $('viewLoading').innerHTML = `<div style="color:red;padding:20px;">加载失败: ${err.message}</div>`;
   }
 }
-// 在你的 index.js 中加入
-let deferredPrompt;
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  // 阻止 Chrome 默认的微型提示栏
-  e.preventDefault();
-  deferredPrompt = e;
-  
-  // 显示你自定义的“安装”按钮或提示框
-  const installBtn = document.getElementById('your-install-button'); 
-  installBtn.style.display = 'block';
-
-  installBtn.addEventListener('click', () => {
-    deferredPrompt.prompt(); // 触发安装提示
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('用户接受了安装');
-      }
-      deferredPrompt = null;
-    });
-  });
-});
 bootstrap();
