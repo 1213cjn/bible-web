@@ -6,7 +6,8 @@ const ASSETS = [
   '/styles.css',
   '/index.js',
   '/manifest.json',
-  '/icon-192.png'
+  '/icon-192.png',
+  '/icon-512.png'
   // 如果你的圣经数据是本地 JSON，也要加进来
 ];
 
