@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="theme-color" content="#f7f7f7" id="themeColorMeta" />
   <title>微读圣经Lite Web</title>
-  
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2b6cb0" />
+  <link rel="apple-touch-icon" href="icon-192.jpg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <style>
     /* 核心主题变量 */
     :root {
@@ -160,5 +164,16 @@
   <div id="toast" class="toast"></div>
 
   <script src="index.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').then(function(registration) {
+          console.log('ServiceWorker 注册成功，作用域: ', registration.scope);
+        }, function(err) {
+          console.log('ServiceWorker 注册失败: ', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
