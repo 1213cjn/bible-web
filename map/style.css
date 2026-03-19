@@ -1,0 +1,70 @@
+/* 基本重置 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, system-ui, sans-serif;
+    height: 100vh; /* 全屏高度 */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* 防止页面整体滚动 */
+}
+
+/* 顶部标题栏 */
+.header {
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #ececec;
+    padding: 10px;
+    text-align: center;
+    /* 适配 iOS刘海屏 */
+    padding-top: env(safe-area-inset-top, 10px); 
+    z-index: 100; /* 确保标题栏在地图之上 */
+}
+
+.header h1 {
+    font-size: 18px;
+    color: #2b6cb0;
+}
+
+.header p {
+    font-size: 12px;
+    color: #666;
+}
+
+/* 核心：地图容器 */
+#bible-map {
+    flex: 1; /* 填充 header 和 footer 剩下的所有空间 */
+    width: 100%;
+    z-index: 1; /* Leaflet 默认 z-index为 400，这里设置 lower 以便于导航栏覆盖 */
+}
+
+/* 底部信息栏 */
+.footer {
+    background-color: #f7f7f7;
+    border-top: 1px solid #ececec;
+    padding: 10px;
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    /* 适配 iOS 底部 safe-area */
+    padding-bottom: env(safe-area-inset-bottom, 10px);
+}
+
+/* --- 自定义 Leaflet Popup 样式，使其看起来更像你的主体风格 --- */
+.leaflet-popup-content-wrapper {
+    border-radius: 12px;
+    padding: 5px;
+}
+
+.leaflet-popup-content b {
+    color: #2b6cb0;
+    font-size: 16px;
+}
+
+.leaflet-popup-content i {
+    color: #777;
+    font-size: 12px;
+}
