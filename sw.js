@@ -29,10 +29,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 核心：拦截请求
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
+
       // 如果缓存里有，直接给缓存；否则去联网下
 self.addEventListener('fetch', (event) => {
   event.respondWith(
@@ -44,6 +41,4 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(() => caches.match(event.request))
   );
-});    })
-  );
-});
+});    
